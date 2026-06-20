@@ -3,6 +3,17 @@ import { z } from "zod";
 
 import { getMercadoPagoPayment, validateMercadoPagoSignature } from "@/lib/mercado-pago.server";
 import { localDb } from "@/lib/database.server";
+import { getManagedBotToken } from "@/lib/bot-manager.server";
+import { findSalesBotCloneById, salesBotCloneRuntime } from "@/lib/sales-bot-registry.server";
+import { enterSalesBotRuntime } from "@/lib/sales-bot-runtime.server";
+import {
+  fulfillImageBotLimitBoostPayment,
+  fulfillImageBotPayment,
+  fulfillImageBotPremiumPayment,
+  updateImageBotLimitBoostPaymentRawStatus,
+  updateImageBotPaymentRawStatus,
+  updateImageBotPremiumPaymentRawStatus,
+} from "@/lib/image-bot-payments.server";
 
 const orderIdSchema = z.string().uuid();
 
@@ -14,7 +25,11 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
           if (!secret) return new Response("Webhook ainda não configurado", { status: 503 });
 
-          const body = (await request.json()) as { type?: string; data?: { id?: string | number } };
+          const body = (await request.json()) as {
+            type?: string;
+            live_mode?: boolean;
+            data?: { id?: string | number };
+          };
           const url = new URL(request.url);
           const dataId =
             url.searchParams.get("data.id") ??
@@ -31,8 +46,89 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           }
 
           if (body.type && body.type !== "payment") return Response.json({ ok: true });
+          if (body.live_mode === false) {
+            return Response.json({ ok: true, simulated: true });
+          }
           const payment = await getMercadoPagoPayment(dataId);
-          const orderId = orderIdSchema.parse(payment.external_reference);
+          const externalReference = String(payment.external_reference ?? "");
+
+          if (externalReference.startsWith("image:")) {
+            const imageOrderId = orderIdSchema.parse(externalReference.slice("image:".length));
+            if (payment.status !== "approved") {
+              updateImageBotPaymentRawStatus(imageOrderId, payment.status);
+              return Response.json({ ok: true, status: payment.status, target: "image_bot" });
+            }
+            if (payment.currency_id !== "BRL") throw new Error("Moeda inesperada no pagamento");
+            await fulfillImageBotPayment({
+              token: getManagedBotToken("images"),
+              orderId: imageOrderId,
+              providerPaymentId: String(payment.id),
+              providerStatus: payment.status_detail,
+              paidAt: payment.date_approved,
+              amount: Number(payment.transaction_amount),
+            });
+            return Response.json({ ok: true, target: "image_bot" });
+          }
+
+          if (externalReference.startsWith("image-limit:")) {
+            const imageLimitOrderId = orderIdSchema.parse(
+              externalReference.slice("image-limit:".length),
+            );
+            if (payment.status !== "approved") {
+              updateImageBotLimitBoostPaymentRawStatus(imageLimitOrderId, payment.status);
+              return Response.json({
+                ok: true,
+                status: payment.status,
+                target: "image_bot_limit",
+              });
+            }
+            if (payment.currency_id !== "BRL") throw new Error("Moeda inesperada no pagamento");
+            await fulfillImageBotLimitBoostPayment({
+              token: getManagedBotToken("images"),
+              orderId: imageLimitOrderId,
+              providerPaymentId: String(payment.id),
+              providerStatus: payment.status_detail,
+              paidAt: payment.date_approved,
+              amount: Number(payment.transaction_amount),
+            });
+            return Response.json({ ok: true, target: "image_bot_limit" });
+          }
+
+          if (externalReference.startsWith("image-premium:")) {
+            const premiumOrderId = orderIdSchema.parse(
+              externalReference.slice("image-premium:".length),
+            );
+            if (payment.status !== "approved") {
+              updateImageBotPremiumPaymentRawStatus(premiumOrderId, payment.status);
+              return Response.json({
+                ok: true,
+                status: payment.status,
+                target: "image_bot_premium",
+              });
+            }
+            if (payment.currency_id !== "BRL") throw new Error("Moeda inesperada no pagamento");
+            await fulfillImageBotPremiumPayment({
+              token: getManagedBotToken("images"),
+              orderId: premiumOrderId,
+              providerPaymentId: String(payment.id),
+              providerStatus: payment.status_detail,
+              paidAt: payment.date_approved,
+              amount: Number(payment.transaction_amount),
+            });
+            return Response.json({ ok: true, target: "image_bot_premium" });
+          }
+
+          let salesOrderReference = externalReference;
+          const cloneReference = /^sales:([^:]+):(.+)$/.exec(externalReference);
+          if (cloneReference) {
+            const clone = findSalesBotCloneById(cloneReference[1]);
+            if (!clone) throw new Error("Bot de vendas do pagamento nao foi encontrado");
+            enterSalesBotRuntime(salesBotCloneRuntime(clone));
+            salesOrderReference = cloneReference[2];
+          } else {
+            enterSalesBotRuntime(null);
+          }
+          const orderId = orderIdSchema.parse(salesOrderReference);
 
           if (payment.status !== "approved") {
             await localDb

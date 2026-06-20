@@ -20,7 +20,7 @@ const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v));
 const fmtDate = (d: string) => new Date(d).toLocaleString("pt-BR");
 
-export const Route = createFileRoute("/_authenticated/pedidos")({
+export const Route = createFileRoute("/_authenticated/$bot/pedidos")({
   component: Pedidos,
 });
 

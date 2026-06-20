@@ -46,7 +46,7 @@ function LoginPage() {
   useEffect(() => {
     void statusFn().then((status) => {
       if (status.authenticated) {
-        void navigate({ to: "/dashboard" });
+        void navigate({ to: "/bots" });
         return;
       }
       setHasAdmin(status.hasAdmin);
@@ -74,7 +74,7 @@ function LoginPage() {
       } else {
         await loginFn({ data: { email, password } });
       }
-      await navigate({ to: "/dashboard" });
+      await navigate({ to: "/bots" });
     } catch (error) {
       toast.error(getAuthErrorMessage(error as Error));
     } finally {

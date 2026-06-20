@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
-import { AdminLayout } from "@/components/AdminLayout";
 import { getAdminSession } from "@/lib/api/auth.functions";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -26,9 +25,5 @@ function AuthenticatedRoute() {
   }, [navigate, sessionFn]);
 
   if (!ready) return <div className="p-8 text-sm text-muted-foreground">Validando sessão...</div>;
-  return (
-    <AdminLayout>
-      <Outlet />
-    </AdminLayout>
-  );
+  return <Outlet />;
 }

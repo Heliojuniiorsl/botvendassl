@@ -32,7 +32,53 @@ export type MercadoPagoPayment = {
   transaction_amount: number;
   currency_id: string;
   date_approved: string | null;
+  point_of_interaction?: {
+    transaction_data?: {
+      qr_code?: string;
+      qr_code_base64?: string;
+      ticket_url?: string;
+    };
+  };
 };
+
+export async function createPixPayment(input: {
+  orderId: string;
+  externalReference?: string;
+  title: string;
+  amount: number;
+  payerEmail: string;
+  payerName?: string | null;
+  publicBaseUrl: string;
+  expirationMinutes?: number;
+}) {
+  const baseUrl = input.publicBaseUrl.replace(/\/$/, "");
+  const expirationMinutes = Math.min(Math.max(input.expirationMinutes ?? 15, 5), 24 * 60);
+  const result = await mercadoPagoFetch<MercadoPagoPayment>("/v1/payments", {
+    method: "POST",
+    headers: { "X-Idempotency-Key": input.orderId },
+    body: JSON.stringify({
+      transaction_amount: Number(input.amount.toFixed(2)),
+      description: input.title.slice(0, 120),
+      payment_method_id: "pix",
+      external_reference: input.externalReference ?? input.orderId,
+      notification_url: `${baseUrl}/api/public/payments/webhook?source_news=webhooks`,
+      date_of_expiration: new Date(Date.now() + expirationMinutes * 60_000).toISOString(),
+      payer: {
+        email: input.payerEmail,
+        first_name: (input.payerName || "Cliente").slice(0, 60),
+      },
+    }),
+  });
+  const transaction = result.point_of_interaction?.transaction_data;
+  if (!transaction?.qr_code) throw new Error("Mercado Pago nao retornou o codigo Pix");
+  return {
+    paymentId: String(result.id),
+    status: result.status,
+    qrCode: transaction.qr_code,
+    qrCodeBase64: transaction.qr_code_base64 ?? "",
+    ticketUrl: transaction.ticket_url ?? "",
+  };
+}
 
 export async function createPaymentPreference(input: {
   orderId: string;

@@ -12,6 +12,10 @@ type Props = {
   /** Mostra também um campo para colar um link externo. */
   allowUrl?: boolean;
   visibility?: "public" | "private";
+  accept?: string;
+  buttonLabel?: string;
+  allowedKinds?: Array<"image" | "video">;
+  maxSizeMb?: number;
 };
 
 function fileToBase64(file: File): Promise<string> {
@@ -26,19 +30,35 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function ImageUpload({ value, onChange, allowUrl = true, visibility = "public" }: Props) {
+function isVideoUrl(value: string) {
+  return /\.(mp4|mov|m4v|webm)(?:[?#].*)?$/i.test(value);
+}
+
+export function ImageUpload({
+  value,
+  onChange,
+  allowUrl = true,
+  visibility = "public",
+  accept = "image/*",
+  buttonLabel = "Enviar foto",
+  allowedKinds = ["image"],
+  maxSizeMb = 8,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const upload = useServerFn(uploadMedia);
   const [loading, setLoading] = useState(false);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Selecione um arquivo de imagem");
+    const allowed = allowedKinds.some((kind) => file.type.startsWith(`${kind}/`));
+    if (!allowed) {
+      toast.error(
+        allowedKinds.includes("video") ? "Selecione uma imagem ou video" : "Selecione uma imagem",
+      );
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error("Imagem muito grande (máx. 8MB)");
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      toast.error(`Arquivo muito grande (max. ${maxSizeMb}MB)`);
       return;
     }
     setLoading(true);
@@ -48,9 +68,9 @@ export function ImageUpload({ value, onChange, allowUrl = true, visibility = "pu
         data: { filename: file.name, contentType: file.type as any, dataBase64, visibility },
       });
       onChange(res.url);
-      toast.success("Imagem enviada");
+      toast.success(file.type.startsWith("video/") ? "Video enviado" : "Imagem enviada");
     } catch (e: any) {
-      toast.error(e.message ?? "Falha ao enviar imagem");
+      toast.error(e.message ?? "Falha ao enviar midia");
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -62,7 +82,7 @@ export function ImageUpload({ value, onChange, allowUrl = true, visibility = "pu
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={accept}
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
@@ -78,7 +98,7 @@ export function ImageUpload({ value, onChange, allowUrl = true, visibility = "pu
           ) : (
             <Upload className="mr-2 h-4 w-4" />
           )}
-          Enviar foto
+          {buttonLabel}
         </Button>
         {value ? (
           <Button
@@ -86,7 +106,7 @@ export function ImageUpload({ value, onChange, allowUrl = true, visibility = "pu
             variant="ghost"
             size="icon"
             onClick={() => onChange("")}
-            title="Remover imagem"
+            title="Remover midia"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -101,7 +121,16 @@ export function ImageUpload({ value, onChange, allowUrl = true, visibility = "pu
         />
       ) : null}
 
-      {value && visibility === "public" ? (
+      {value && visibility === "public" && isVideoUrl(value) ? (
+        <video
+          src={value}
+          controls
+          preload="metadata"
+          className="mt-1 max-h-64 max-w-full rounded-lg border border-border bg-black"
+        />
+      ) : null}
+
+      {value && visibility === "public" && !isVideoUrl(value) ? (
         <img
           src={value}
           alt="Pré-visualização"

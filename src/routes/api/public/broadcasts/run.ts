@@ -22,8 +22,46 @@ export const Route = createFileRoute("/api/public/broadcasts/run")({
         }
 
         const { runDueBroadcasts } = await import("@/lib/broadcast.server");
-        const result = await runDueBroadcasts(localDb);
-        return Response.json({ ok: true, ...result });
+        const { runDueImageBotGroupAutomations } = await import("@/lib/image-bot-broadcast.server");
+        const { runImageBotPremiumExpiryReminders } =
+          await import("@/lib/image-bot-premium-reminders.server");
+        const { runPendingPixReminders, runSubscriptionAutomation } =
+          await import("@/lib/sales.server");
+        const { listSalesBotClones, salesBotCloneRuntime } =
+          await import("@/lib/sales-bot-registry.server");
+        const { enterSalesBotRuntime, runWithSalesBotRuntime } =
+          await import("@/lib/sales-bot-runtime.server");
+
+        const runSalesAutomations = async () => {
+          const [broadcasts, subscriptions, pendingPix] = await Promise.all([
+            runDueBroadcasts(localDb),
+            runSubscriptionAutomation(),
+            runPendingPixReminders(),
+          ]);
+          return { broadcasts, subscriptions, pendingPix };
+        };
+
+        enterSalesBotRuntime(null);
+        const [primarySales, cloneSales, imageGroupAutomations, premiumExpiryReminders] =
+          await Promise.all([
+            runSalesAutomations(),
+            Promise.all(
+              listSalesBotClones().map((clone) =>
+                runWithSalesBotRuntime(salesBotCloneRuntime(clone), runSalesAutomations),
+              ),
+            ),
+            runDueImageBotGroupAutomations(),
+            runImageBotPremiumExpiryReminders(),
+          ]);
+        return Response.json({
+          ok: true,
+          broadcasts: primarySales.broadcasts,
+          imageGroupAutomations,
+          premiumExpiryReminders,
+          subscriptions: primarySales.subscriptions,
+          pendingPix: primarySales.pendingPix,
+          salesClones: cloneSales,
+        });
       },
     },
   },

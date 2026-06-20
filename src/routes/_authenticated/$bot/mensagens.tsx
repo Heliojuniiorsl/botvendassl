@@ -7,6 +7,8 @@ import {
   saveBroadcast,
   deleteBroadcast,
   sendBroadcastNow,
+  listPlans,
+  listOffers,
 } from "@/lib/api/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,27 +44,34 @@ import { Pencil, Trash2, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 
-export const Route = createFileRoute("/_authenticated/mensagens")({
+export const Route = createFileRoute("/_authenticated/$bot/mensagens")({
   component: Mensagens,
 });
 
-type BtnKind = "link" | "plans" | "contents" | "menu";
-type Btn = { label: string; kind: BtnKind; url?: string | null };
+type BtnKind = "link" | "plans" | "plan" | "offers" | "menu";
+type Btn = { label: string; kind: BtnKind; url?: string | null; plan_id?: string | null };
 type Broadcast = {
   id: string;
   title: string;
   message: string;
   image_url: string | null;
+  content_kind?: "custom" | "telegram_message";
+  source_chat_id?: number | string | null;
+  source_message_id?: number | null;
   buttons: Btn[];
-  interval_hours: number;
+  interval_minutes: number;
   is_active: boolean;
   last_sent_at: string | null;
+  audience_type: "all" | "plan" | "purchase" | "active" | "inactive";
+  audience_value: string | null;
+  activity_days: number;
 };
 
 const kindLabel: Record<BtnKind, string> = {
   link: "Link externo",
   plans: "Abrir planos",
-  contents: "Abrir conteúdos",
+  plan: "Abrir um plano",
+  offers: "Abrir ofertas",
   menu: "Abrir menu",
 };
 
@@ -72,15 +81,26 @@ function Mensagens() {
   const saveFn = useServerFn(saveBroadcast);
   const delFn = useServerFn(deleteBroadcast);
   const sendFn = useServerFn(sendBroadcastNow);
+  const plansFn = useServerFn(listPlans);
+  const offersFn = useServerFn(listOffers);
 
   const { data: items } = useSuspenseQuery(
     queryOptions({ queryKey: ["broadcasts"], queryFn: () => listFn() as Promise<Broadcast[]> }),
+  );
+  const { data: plans } = useSuspenseQuery(
+    queryOptions({ queryKey: ["plans"], queryFn: () => plansFn() as Promise<any[]> }),
+  );
+  const { data: offers } = useSuspenseQuery(
+    queryOptions({ queryKey: ["offers"], queryFn: () => offersFn() as Promise<any[]> }),
   );
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Broadcast | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [contentKind, setContentKind] = useState<"custom" | "telegram_message">("custom");
   const [buttons, setButtons] = useState<Btn[]>([]);
+  const [audienceType, setAudienceType] = useState<Broadcast["audience_type"]>("all");
+  const [audienceValue, setAudienceValue] = useState("");
 
   const save = useMutation({
     mutationFn: (p: any) => saveFn({ data: p }),
@@ -111,13 +131,19 @@ function Mensagens() {
   function openNew() {
     setEditing(null);
     setImageUrl("");
+    setContentKind("custom");
     setButtons([]);
+    setAudienceType("all");
+    setAudienceValue("");
     setOpen(true);
   }
   function openEdit(b: Broadcast) {
     setEditing(b);
     setImageUrl(b.image_url ?? "");
+    setContentKind(b.content_kind ?? "custom");
     setButtons(b.buttons ?? []);
+    setAudienceType(b.audience_type ?? "all");
+    setAudienceValue(b.audience_value ?? "");
     setOpen(true);
   }
 
@@ -140,14 +166,23 @@ function Mensagens() {
         label: b.label.trim(),
         kind: b.kind,
         url: b.kind === "link" ? (b.url ?? "") : null,
+        plan_id: b.kind === "plan" ? b.plan_id : null,
       }));
     save.mutate({
       id: editing?.id,
       title: String(f.get("title")),
-      message: String(f.get("message")),
-      image_url: imageUrl || null,
+      message: String(f.get("message") || ""),
+      image_url: contentKind === "custom" ? imageUrl || null : null,
+      content_kind: contentKind,
+      source_chat_id:
+        contentKind === "telegram_message" ? String(f.get("source_chat_id") || "").trim() : null,
+      source_message_id:
+        contentKind === "telegram_message" ? Number(f.get("source_message_id")) : null,
       buttons: cleanButtons,
-      interval_hours: Number(f.get("interval_hours")),
+      interval_minutes: Number(f.get("interval_minutes")),
+      audience_type: audienceType,
+      audience_value: audienceType === "purchase" ? audienceValue || "any:" : audienceValue || null,
+      activity_days: Number(f.get("activity_days") || 30),
       is_active: f.get("is_active") === "on",
     });
   }
@@ -158,8 +193,7 @@ function Mensagens() {
         <div>
           <h1 className="font-display text-3xl font-semibold">Mensagens automáticas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Disparos periódicos para todos os usuários do bot — conteúdos, promoções, descontos e
-            novos planos.
+            Disparos periódicos para todos os usuários do bot — promoções, descontos e novos planos.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -184,32 +218,154 @@ function Mensagens() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="message">Descrição / texto da mensagem</Label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  required
-                  rows={4}
-                  defaultValue={editing?.message ?? ""}
-                  placeholder="Texto que o usuário vai receber..."
-                />
+                <Label htmlFor="content_kind">Conteúdo da mensagem</Label>
+                <select
+                  id="content_kind"
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  value={contentKind}
+                  onChange={(event) =>
+                    setContentKind(event.target.value as "custom" | "telegram_message")
+                  }
+                >
+                  <option value="custom">Criar texto ou foto aqui</option>
+                  <option value="telegram_message">Usar mensagem pronta pelo ID</option>
+                </select>
               </div>
+              {contentKind === "custom" ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Descrição / texto da mensagem</Label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      rows={4}
+                      defaultValue={editing?.message ?? ""}
+                      placeholder="Texto que o usuário vai receber..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Foto da mensagem</Label>
+                    <ImageUpload value={imageUrl} onChange={setImageUrl} />
+                  </div>
+                </>
+              ) : (
+                <Card className="grid gap-4 border-dashed p-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="source_chat_id">ID do chat de origem</Label>
+                    <Input
+                      id="source_chat_id"
+                      name="source_chat_id"
+                      required
+                      defaultValue={editing?.source_chat_id ?? ""}
+                      placeholder="-1001234567890 ou @canal"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="source_message_id">ID da mensagem</Label>
+                    <Input
+                      id="source_message_id"
+                      name="source_message_id"
+                      type="number"
+                      min="1"
+                      required
+                      defaultValue={editing?.source_message_id ?? ""}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground sm:col-span-2">
+                    O bot precisa ter acesso ao chat de origem. Os botões configurados abaixo serão
+                    adicionados à mensagem copiada.
+                  </p>
+                </Card>
+              )}
               <div className="space-y-2">
-                <Label>Foto da mensagem</Label>
-                <ImageUpload value={imageUrl} onChange={setImageUrl} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="interval_hours">Enviar a cada (horas)</Label>
+                <Label htmlFor="interval_minutes">Enviar a cada (minutos)</Label>
                 <Input
-                  id="interval_hours"
-                  name="interval_hours"
+                  id="interval_minutes"
+                  name="interval_minutes"
                   type="number"
                   min="1"
-                  max="8760"
+                  max="525600"
                   required
-                  defaultValue={editing?.interval_hours ?? 24}
+                  defaultValue={editing?.interval_minutes ?? 60}
                 />
               </div>
+
+              <Card className="space-y-4 border-dashed p-4">
+                <div>
+                  <Label>Segmentação</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Escolha exatamente quem receberá esta mensagem.
+                  </p>
+                </div>
+                <Select
+                  value={audienceType}
+                  onValueChange={(value) => {
+                    setAudienceType(value as Broadcast["audience_type"]);
+                    setAudienceValue("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os clientes</SelectItem>
+                    <SelectItem value="plan">Assinantes de um plano</SelectItem>
+                    <SelectItem value="purchase">Quem realizou uma compra</SelectItem>
+                    <SelectItem value="active">Ativos recentemente</SelectItem>
+                    <SelectItem value="inactive">Inativos há alguns dias</SelectItem>
+                  </SelectContent>
+                </Select>
+                {audienceType === "plan" && (
+                  <Select value={audienceValue} onValueChange={setAudienceValue}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o plano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {audienceType === "purchase" && (
+                  <Select value={audienceValue || "any:"} onValueChange={setAudienceValue}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any:">Qualquer compra paga</SelectItem>
+                      {plans.map((plan) => (
+                        <SelectItem key={`plan:${plan.id}`} value={`plan:${plan.id}`}>
+                          Plano: {plan.name}
+                        </SelectItem>
+                      ))}
+                      {offers.map((offer) => (
+                        <SelectItem key={`offer:${offer.id}`} value={`offer:${offer.id}`}>
+                          Oferta: {offer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {(audienceType === "active" || audienceType === "inactive") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="activity_days">Período de atividade (dias)</Label>
+                    <Input
+                      id="activity_days"
+                      name="activity_days"
+                      type="number"
+                      min="1"
+                      max="3650"
+                      defaultValue={editing?.activity_days ?? 30}
+                    />
+                  </div>
+                )}
+                {audienceType !== "active" && audienceType !== "inactive" && (
+                  <input type="hidden" name="activity_days" value={editing?.activity_days ?? 30} />
+                )}
+              </Card>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -243,14 +399,21 @@ function Mensagens() {
                       </div>
                       <Select
                         value={b.kind}
-                        onValueChange={(v) => updateButton(i, { kind: v as BtnKind })}
+                        onValueChange={(v) =>
+                          updateButton(i, {
+                            kind: v as BtnKind,
+                            url: v === "link" ? b.url : null,
+                            plan_id: v === "plan" ? b.plan_id : null,
+                          })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="plans">Abrir planos</SelectItem>
-                          <SelectItem value="contents">Abrir conteúdos</SelectItem>
+                          <SelectItem value="plan">Abrir um plano específico</SelectItem>
+                          <SelectItem value="offers">Abrir ofertas</SelectItem>
                           <SelectItem value="menu">Abrir menu</SelectItem>
                           <SelectItem value="link">Link externo</SelectItem>
                         </SelectContent>
@@ -261,6 +424,31 @@ function Mensagens() {
                           onChange={(e) => updateButton(i, { url: e.target.value })}
                           placeholder="https://..."
                         />
+                      )}
+                      {b.kind === "plan" && (
+                        <Select
+                          value={b.plan_id ?? ""}
+                          onValueChange={(planId) => {
+                            const plan = plans.find((item) => item.id === planId);
+                            updateButton(i, {
+                              plan_id: planId,
+                              label: b.label.trim() || plan?.name || "Ver plano",
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Escolha o plano" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {plans
+                              .filter((plan) => plan.is_active)
+                              .map((plan) => (
+                                <SelectItem key={plan.id} value={plan.id}>
+                                  {plan.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                   ))}
@@ -292,6 +480,7 @@ function Mensagens() {
               <TableHead>Título</TableHead>
               <TableHead>Intervalo</TableHead>
               <TableHead>Botões</TableHead>
+              <TableHead>Público</TableHead>
               <TableHead>Último envio</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -300,7 +489,7 @@ function Mensagens() {
           <TableBody>
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Nenhuma mensagem automática.
                 </TableCell>
               </TableRow>
@@ -308,8 +497,11 @@ function Mensagens() {
             {items.map((b) => (
               <TableRow key={b.id}>
                 <TableCell className="font-medium">{b.title}</TableCell>
-                <TableCell>{b.interval_hours}h</TableCell>
+                <TableCell>{b.interval_minutes} min</TableCell>
                 <TableCell>{b.buttons?.length ?? 0}</TableCell>
+                <TableCell className="capitalize">
+                  {b.audience_type === "all" ? "Todos" : b.audience_type}
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {b.last_sent_at ? new Date(b.last_sent_at).toLocaleString("pt-BR") : "—"}
                 </TableCell>

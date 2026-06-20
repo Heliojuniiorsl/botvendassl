@@ -13,17 +13,26 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
-import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
-import { Route as AuthenticatedMensagensRouteImport } from './routes/_authenticated/mensagens'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedConteudosRouteImport } from './routes/_authenticated/conteudos'
-import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedBotsRouteImport } from './routes/_authenticated/bots'
+import { Route as AuthenticatedBotRouteRouteImport } from './routes/_authenticated/$bot/route'
+import { Route as AuthenticatedBotUsuariosRouteImport } from './routes/_authenticated/$bot/usuarios'
+import { Route as AuthenticatedBotPlanosRouteImport } from './routes/_authenticated/$bot/planos'
+import { Route as AuthenticatedBotPedidosRouteImport } from './routes/_authenticated/$bot/pedidos'
+import { Route as AuthenticatedBotPagamentosRouteImport } from './routes/_authenticated/$bot/pagamentos'
+import { Route as AuthenticatedBotOfertasRouteImport } from './routes/_authenticated/$bot/ofertas'
+import { Route as AuthenticatedBotMensagensRouteImport } from './routes/_authenticated/$bot/mensagens'
+import { Route as AuthenticatedBotGruposRouteImport } from './routes/_authenticated/$bot/grupos'
+import { Route as AuthenticatedBotEstatisticasRouteImport } from './routes/_authenticated/$bot/estatisticas'
+import { Route as AuthenticatedBotDashboardRouteImport } from './routes/_authenticated/$bot/dashboard'
+import { Route as AuthenticatedBotConfiguracoesRouteImport } from './routes/_authenticated/$bot/configuracoes'
+import { Route as AuthenticatedBotClientesRouteImport } from './routes/_authenticated/$bot/clientes'
+import { Route as AuthenticatedBotAdministracaoRouteImport } from './routes/_authenticated/$bot/administracao'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicTelegramImageWebhookRouteImport } from './routes/api/public/telegram/image-webhook'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media/$'
 import { Route as ApiPublicBroadcastsRunRouteImport } from './routes/api/public/broadcasts/run'
+import { Route as ApiAdminImageBotMediaIdRouteImport } from './routes/api/admin/image-bot-media/$id'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -44,46 +53,94 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
+const AuthenticatedBotsRoute = AuthenticatedBotsRouteImport.update({
+  id: '/bots',
+  path: '/bots',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBotRouteRoute = AuthenticatedBotRouteRouteImport.update({
+  id: '/$bot',
+  path: '/$bot',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBotUsuariosRoute =
+  AuthenticatedBotUsuariosRouteImport.update({
+    id: '/usuarios',
+    path: '/usuarios',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
+const AuthenticatedBotPlanosRoute = AuthenticatedBotPlanosRouteImport.update({
   id: '/planos',
   path: '/planos',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => AuthenticatedBotRouteRoute,
 } as any)
-const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
+const AuthenticatedBotPedidosRoute = AuthenticatedBotPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => AuthenticatedBotRouteRoute,
 } as any)
-const AuthenticatedMensagensRoute = AuthenticatedMensagensRouteImport.update({
-  id: '/mensagens',
-  path: '/mensagens',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedBotPagamentosRoute =
+  AuthenticatedBotPagamentosRouteImport.update({
+    id: '/pagamentos',
+    path: '/pagamentos',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
+const AuthenticatedBotOfertasRoute = AuthenticatedBotOfertasRouteImport.update({
+  id: '/ofertas',
+  path: '/ofertas',
+  getParentRoute: () => AuthenticatedBotRouteRoute,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedBotMensagensRoute =
+  AuthenticatedBotMensagensRouteImport.update({
+    id: '/mensagens',
+    path: '/mensagens',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
+const AuthenticatedBotGruposRoute = AuthenticatedBotGruposRouteImport.update({
+  id: '/grupos',
+  path: '/grupos',
+  getParentRoute: () => AuthenticatedBotRouteRoute,
 } as any)
-const AuthenticatedConteudosRoute = AuthenticatedConteudosRouteImport.update({
-  id: '/conteudos',
-  path: '/conteudos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedConfiguracoesRoute =
-  AuthenticatedConfiguracoesRouteImport.update({
+const AuthenticatedBotEstatisticasRoute =
+  AuthenticatedBotEstatisticasRouteImport.update({
+    id: '/estatisticas',
+    path: '/estatisticas',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
+const AuthenticatedBotDashboardRoute =
+  AuthenticatedBotDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
+const AuthenticatedBotConfiguracoesRoute =
+  AuthenticatedBotConfiguracoesRouteImport.update({
     id: '/configuracoes',
     path: '/configuracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    getParentRoute: () => AuthenticatedBotRouteRoute,
   } as any)
-const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedBotClientesRoute =
+  AuthenticatedBotClientesRouteImport.update({
+    id: '/clientes',
+    path: '/clientes',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
+const AuthenticatedBotAdministracaoRoute =
+  AuthenticatedBotAdministracaoRouteImport.update({
+    id: '/administracao',
+    path: '/administracao',
+    getParentRoute: () => AuthenticatedBotRouteRoute,
+  } as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
     path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTelegramImageWebhookRoute =
+  ApiPublicTelegramImageWebhookRouteImport.update({
+    id: '/api/public/telegram/image-webhook',
+    path: '/api/public/telegram/image-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicPaymentsWebhookRoute =
@@ -102,37 +159,60 @@ const ApiPublicBroadcastsRunRoute = ApiPublicBroadcastsRunRouteImport.update({
   path: '/api/public/broadcasts/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminImageBotMediaIdRoute = ApiAdminImageBotMediaIdRouteImport.update({
+  id: '/api/admin/image-bot-media/$id',
+  path: '/api/admin/image-bot-media/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/pagamento': typeof PagamentoRoute
   '/termos': typeof TermosRoute
-  '/clientes': typeof AuthenticatedClientesRoute
-  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/conteudos': typeof AuthenticatedConteudosRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/mensagens': typeof AuthenticatedMensagensRoute
-  '/pedidos': typeof AuthenticatedPedidosRoute
-  '/planos': typeof AuthenticatedPlanosRoute
+  '/$bot': typeof AuthenticatedBotRouteRouteWithChildren
+  '/bots': typeof AuthenticatedBotsRoute
+  '/$bot/administracao': typeof AuthenticatedBotAdministracaoRoute
+  '/$bot/clientes': typeof AuthenticatedBotClientesRoute
+  '/$bot/configuracoes': typeof AuthenticatedBotConfiguracoesRoute
+  '/$bot/dashboard': typeof AuthenticatedBotDashboardRoute
+  '/$bot/estatisticas': typeof AuthenticatedBotEstatisticasRoute
+  '/$bot/grupos': typeof AuthenticatedBotGruposRoute
+  '/$bot/mensagens': typeof AuthenticatedBotMensagensRoute
+  '/$bot/ofertas': typeof AuthenticatedBotOfertasRoute
+  '/$bot/pagamentos': typeof AuthenticatedBotPagamentosRoute
+  '/$bot/pedidos': typeof AuthenticatedBotPedidosRoute
+  '/$bot/planos': typeof AuthenticatedBotPlanosRoute
+  '/$bot/usuarios': typeof AuthenticatedBotUsuariosRoute
+  '/api/admin/image-bot-media/$id': typeof ApiAdminImageBotMediaIdRoute
   '/api/public/broadcasts/run': typeof ApiPublicBroadcastsRunRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/telegram/image-webhook': typeof ApiPublicTelegramImageWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pagamento': typeof PagamentoRoute
   '/termos': typeof TermosRoute
-  '/clientes': typeof AuthenticatedClientesRoute
-  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/conteudos': typeof AuthenticatedConteudosRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/mensagens': typeof AuthenticatedMensagensRoute
-  '/pedidos': typeof AuthenticatedPedidosRoute
-  '/planos': typeof AuthenticatedPlanosRoute
+  '/$bot': typeof AuthenticatedBotRouteRouteWithChildren
+  '/bots': typeof AuthenticatedBotsRoute
+  '/$bot/administracao': typeof AuthenticatedBotAdministracaoRoute
+  '/$bot/clientes': typeof AuthenticatedBotClientesRoute
+  '/$bot/configuracoes': typeof AuthenticatedBotConfiguracoesRoute
+  '/$bot/dashboard': typeof AuthenticatedBotDashboardRoute
+  '/$bot/estatisticas': typeof AuthenticatedBotEstatisticasRoute
+  '/$bot/grupos': typeof AuthenticatedBotGruposRoute
+  '/$bot/mensagens': typeof AuthenticatedBotMensagensRoute
+  '/$bot/ofertas': typeof AuthenticatedBotOfertasRoute
+  '/$bot/pagamentos': typeof AuthenticatedBotPagamentosRoute
+  '/$bot/pedidos': typeof AuthenticatedBotPedidosRoute
+  '/$bot/planos': typeof AuthenticatedBotPlanosRoute
+  '/$bot/usuarios': typeof AuthenticatedBotUsuariosRoute
+  '/api/admin/image-bot-media/$id': typeof ApiAdminImageBotMediaIdRoute
   '/api/public/broadcasts/run': typeof ApiPublicBroadcastsRunRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/telegram/image-webhook': typeof ApiPublicTelegramImageWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -141,16 +221,25 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/pagamento': typeof PagamentoRoute
   '/termos': typeof TermosRoute
-  '/_authenticated/clientes': typeof AuthenticatedClientesRoute
-  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/_authenticated/conteudos': typeof AuthenticatedConteudosRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/mensagens': typeof AuthenticatedMensagensRoute
-  '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
-  '/_authenticated/planos': typeof AuthenticatedPlanosRoute
+  '/_authenticated/$bot': typeof AuthenticatedBotRouteRouteWithChildren
+  '/_authenticated/bots': typeof AuthenticatedBotsRoute
+  '/_authenticated/$bot/administracao': typeof AuthenticatedBotAdministracaoRoute
+  '/_authenticated/$bot/clientes': typeof AuthenticatedBotClientesRoute
+  '/_authenticated/$bot/configuracoes': typeof AuthenticatedBotConfiguracoesRoute
+  '/_authenticated/$bot/dashboard': typeof AuthenticatedBotDashboardRoute
+  '/_authenticated/$bot/estatisticas': typeof AuthenticatedBotEstatisticasRoute
+  '/_authenticated/$bot/grupos': typeof AuthenticatedBotGruposRoute
+  '/_authenticated/$bot/mensagens': typeof AuthenticatedBotMensagensRoute
+  '/_authenticated/$bot/ofertas': typeof AuthenticatedBotOfertasRoute
+  '/_authenticated/$bot/pagamentos': typeof AuthenticatedBotPagamentosRoute
+  '/_authenticated/$bot/pedidos': typeof AuthenticatedBotPedidosRoute
+  '/_authenticated/$bot/planos': typeof AuthenticatedBotPlanosRoute
+  '/_authenticated/$bot/usuarios': typeof AuthenticatedBotUsuariosRoute
+  '/api/admin/image-bot-media/$id': typeof ApiAdminImageBotMediaIdRoute
   '/api/public/broadcasts/run': typeof ApiPublicBroadcastsRunRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/telegram/image-webhook': typeof ApiPublicTelegramImageWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -159,32 +248,50 @@ export interface FileRouteTypes {
     | '/'
     | '/pagamento'
     | '/termos'
-    | '/clientes'
-    | '/configuracoes'
-    | '/conteudos'
-    | '/dashboard'
-    | '/mensagens'
-    | '/pedidos'
-    | '/planos'
+    | '/$bot'
+    | '/bots'
+    | '/$bot/administracao'
+    | '/$bot/clientes'
+    | '/$bot/configuracoes'
+    | '/$bot/dashboard'
+    | '/$bot/estatisticas'
+    | '/$bot/grupos'
+    | '/$bot/mensagens'
+    | '/$bot/ofertas'
+    | '/$bot/pagamentos'
+    | '/$bot/pedidos'
+    | '/$bot/planos'
+    | '/$bot/usuarios'
+    | '/api/admin/image-bot-media/$id'
     | '/api/public/broadcasts/run'
     | '/api/public/media/$'
     | '/api/public/payments/webhook'
+    | '/api/public/telegram/image-webhook'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/pagamento'
     | '/termos'
-    | '/clientes'
-    | '/configuracoes'
-    | '/conteudos'
-    | '/dashboard'
-    | '/mensagens'
-    | '/pedidos'
-    | '/planos'
+    | '/$bot'
+    | '/bots'
+    | '/$bot/administracao'
+    | '/$bot/clientes'
+    | '/$bot/configuracoes'
+    | '/$bot/dashboard'
+    | '/$bot/estatisticas'
+    | '/$bot/grupos'
+    | '/$bot/mensagens'
+    | '/$bot/ofertas'
+    | '/$bot/pagamentos'
+    | '/$bot/pedidos'
+    | '/$bot/planos'
+    | '/$bot/usuarios'
+    | '/api/admin/image-bot-media/$id'
     | '/api/public/broadcasts/run'
     | '/api/public/media/$'
     | '/api/public/payments/webhook'
+    | '/api/public/telegram/image-webhook'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -192,16 +299,25 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/pagamento'
     | '/termos'
-    | '/_authenticated/clientes'
-    | '/_authenticated/configuracoes'
-    | '/_authenticated/conteudos'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/mensagens'
-    | '/_authenticated/pedidos'
-    | '/_authenticated/planos'
+    | '/_authenticated/$bot'
+    | '/_authenticated/bots'
+    | '/_authenticated/$bot/administracao'
+    | '/_authenticated/$bot/clientes'
+    | '/_authenticated/$bot/configuracoes'
+    | '/_authenticated/$bot/dashboard'
+    | '/_authenticated/$bot/estatisticas'
+    | '/_authenticated/$bot/grupos'
+    | '/_authenticated/$bot/mensagens'
+    | '/_authenticated/$bot/ofertas'
+    | '/_authenticated/$bot/pagamentos'
+    | '/_authenticated/$bot/pedidos'
+    | '/_authenticated/$bot/planos'
+    | '/_authenticated/$bot/usuarios'
+    | '/api/admin/image-bot-media/$id'
     | '/api/public/broadcasts/run'
     | '/api/public/media/$'
     | '/api/public/payments/webhook'
+    | '/api/public/telegram/image-webhook'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -210,9 +326,11 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PagamentoRoute: typeof PagamentoRoute
   TermosRoute: typeof TermosRoute
+  ApiAdminImageBotMediaIdRoute: typeof ApiAdminImageBotMediaIdRoute
   ApiPublicBroadcastsRunRoute: typeof ApiPublicBroadcastsRunRoute
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicTelegramImageWebhookRoute: typeof ApiPublicTelegramImageWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -246,60 +364,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/planos': {
-      id: '/_authenticated/planos'
+    '/_authenticated/bots': {
+      id: '/_authenticated/bots'
+      path: '/bots'
+      fullPath: '/bots'
+      preLoaderRoute: typeof AuthenticatedBotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/$bot': {
+      id: '/_authenticated/$bot'
+      path: '/$bot'
+      fullPath: '/$bot'
+      preLoaderRoute: typeof AuthenticatedBotRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/$bot/usuarios': {
+      id: '/_authenticated/$bot/usuarios'
+      path: '/usuarios'
+      fullPath: '/$bot/usuarios'
+      preLoaderRoute: typeof AuthenticatedBotUsuariosRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
+    }
+    '/_authenticated/$bot/planos': {
+      id: '/_authenticated/$bot/planos'
       path: '/planos'
-      fullPath: '/planos'
-      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/$bot/planos'
+      preLoaderRoute: typeof AuthenticatedBotPlanosRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
     }
-    '/_authenticated/pedidos': {
-      id: '/_authenticated/pedidos'
+    '/_authenticated/$bot/pedidos': {
+      id: '/_authenticated/$bot/pedidos'
       path: '/pedidos'
-      fullPath: '/pedidos'
-      preLoaderRoute: typeof AuthenticatedPedidosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/$bot/pedidos'
+      preLoaderRoute: typeof AuthenticatedBotPedidosRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
     }
-    '/_authenticated/mensagens': {
-      id: '/_authenticated/mensagens'
+    '/_authenticated/$bot/pagamentos': {
+      id: '/_authenticated/$bot/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/$bot/pagamentos'
+      preLoaderRoute: typeof AuthenticatedBotPagamentosRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
+    }
+    '/_authenticated/$bot/ofertas': {
+      id: '/_authenticated/$bot/ofertas'
+      path: '/ofertas'
+      fullPath: '/$bot/ofertas'
+      preLoaderRoute: typeof AuthenticatedBotOfertasRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
+    }
+    '/_authenticated/$bot/mensagens': {
+      id: '/_authenticated/$bot/mensagens'
       path: '/mensagens'
-      fullPath: '/mensagens'
-      preLoaderRoute: typeof AuthenticatedMensagensRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/$bot/mensagens'
+      preLoaderRoute: typeof AuthenticatedBotMensagensRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
+    '/_authenticated/$bot/grupos': {
+      id: '/_authenticated/$bot/grupos'
+      path: '/grupos'
+      fullPath: '/$bot/grupos'
+      preLoaderRoute: typeof AuthenticatedBotGruposRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
+    }
+    '/_authenticated/$bot/estatisticas': {
+      id: '/_authenticated/$bot/estatisticas'
+      path: '/estatisticas'
+      fullPath: '/$bot/estatisticas'
+      preLoaderRoute: typeof AuthenticatedBotEstatisticasRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
+    }
+    '/_authenticated/$bot/dashboard': {
+      id: '/_authenticated/$bot/dashboard'
       path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/$bot/dashboard'
+      preLoaderRoute: typeof AuthenticatedBotDashboardRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
     }
-    '/_authenticated/conteudos': {
-      id: '/_authenticated/conteudos'
-      path: '/conteudos'
-      fullPath: '/conteudos'
-      preLoaderRoute: typeof AuthenticatedConteudosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes': {
-      id: '/_authenticated/configuracoes'
+    '/_authenticated/$bot/configuracoes': {
+      id: '/_authenticated/$bot/configuracoes'
       path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/$bot/configuracoes'
+      preLoaderRoute: typeof AuthenticatedBotConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
     }
-    '/_authenticated/clientes': {
-      id: '/_authenticated/clientes'
+    '/_authenticated/$bot/clientes': {
+      id: '/_authenticated/$bot/clientes'
       path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AuthenticatedClientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      fullPath: '/$bot/clientes'
+      preLoaderRoute: typeof AuthenticatedBotClientesRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
+    }
+    '/_authenticated/$bot/administracao': {
+      id: '/_authenticated/$bot/administracao'
+      path: '/administracao'
+      fullPath: '/$bot/administracao'
+      preLoaderRoute: typeof AuthenticatedBotAdministracaoRouteImport
+      parentRoute: typeof AuthenticatedBotRouteRoute
     }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
       fullPath: '/api/public/telegram/webhook'
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/image-webhook': {
+      id: '/api/public/telegram/image-webhook'
+      path: '/api/public/telegram/image-webhook'
+      fullPath: '/api/public/telegram/image-webhook'
+      preLoaderRoute: typeof ApiPublicTelegramImageWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/webhook': {
@@ -323,27 +497,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBroadcastsRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/image-bot-media/$id': {
+      id: '/api/admin/image-bot-media/$id'
+      path: '/api/admin/image-bot-media/$id'
+      fullPath: '/api/admin/image-bot-media/$id'
+      preLoaderRoute: typeof ApiAdminImageBotMediaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedBotRouteRouteChildren {
+  AuthenticatedBotAdministracaoRoute: typeof AuthenticatedBotAdministracaoRoute
+  AuthenticatedBotClientesRoute: typeof AuthenticatedBotClientesRoute
+  AuthenticatedBotConfiguracoesRoute: typeof AuthenticatedBotConfiguracoesRoute
+  AuthenticatedBotDashboardRoute: typeof AuthenticatedBotDashboardRoute
+  AuthenticatedBotEstatisticasRoute: typeof AuthenticatedBotEstatisticasRoute
+  AuthenticatedBotGruposRoute: typeof AuthenticatedBotGruposRoute
+  AuthenticatedBotMensagensRoute: typeof AuthenticatedBotMensagensRoute
+  AuthenticatedBotOfertasRoute: typeof AuthenticatedBotOfertasRoute
+  AuthenticatedBotPagamentosRoute: typeof AuthenticatedBotPagamentosRoute
+  AuthenticatedBotPedidosRoute: typeof AuthenticatedBotPedidosRoute
+  AuthenticatedBotPlanosRoute: typeof AuthenticatedBotPlanosRoute
+  AuthenticatedBotUsuariosRoute: typeof AuthenticatedBotUsuariosRoute
+}
+
+const AuthenticatedBotRouteRouteChildren: AuthenticatedBotRouteRouteChildren = {
+  AuthenticatedBotAdministracaoRoute: AuthenticatedBotAdministracaoRoute,
+  AuthenticatedBotClientesRoute: AuthenticatedBotClientesRoute,
+  AuthenticatedBotConfiguracoesRoute: AuthenticatedBotConfiguracoesRoute,
+  AuthenticatedBotDashboardRoute: AuthenticatedBotDashboardRoute,
+  AuthenticatedBotEstatisticasRoute: AuthenticatedBotEstatisticasRoute,
+  AuthenticatedBotGruposRoute: AuthenticatedBotGruposRoute,
+  AuthenticatedBotMensagensRoute: AuthenticatedBotMensagensRoute,
+  AuthenticatedBotOfertasRoute: AuthenticatedBotOfertasRoute,
+  AuthenticatedBotPagamentosRoute: AuthenticatedBotPagamentosRoute,
+  AuthenticatedBotPedidosRoute: AuthenticatedBotPedidosRoute,
+  AuthenticatedBotPlanosRoute: AuthenticatedBotPlanosRoute,
+  AuthenticatedBotUsuariosRoute: AuthenticatedBotUsuariosRoute,
+}
+
+const AuthenticatedBotRouteRouteWithChildren =
+  AuthenticatedBotRouteRoute._addFileChildren(
+    AuthenticatedBotRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
-  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
-  AuthenticatedConteudosRoute: typeof AuthenticatedConteudosRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedMensagensRoute: typeof AuthenticatedMensagensRoute
-  AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
-  AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
+  AuthenticatedBotRouteRoute: typeof AuthenticatedBotRouteRouteWithChildren
+  AuthenticatedBotsRoute: typeof AuthenticatedBotsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedClientesRoute: AuthenticatedClientesRoute,
-  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
-  AuthenticatedConteudosRoute: AuthenticatedConteudosRoute,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedMensagensRoute: AuthenticatedMensagensRoute,
-  AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
-  AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
+  AuthenticatedBotRouteRoute: AuthenticatedBotRouteRouteWithChildren,
+  AuthenticatedBotsRoute: AuthenticatedBotsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -354,9 +560,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PagamentoRoute: PagamentoRoute,
   TermosRoute: TermosRoute,
+  ApiAdminImageBotMediaIdRoute: ApiAdminImageBotMediaIdRoute,
   ApiPublicBroadcastsRunRoute: ApiPublicBroadcastsRunRoute,
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicTelegramImageWebhookRoute: ApiPublicTelegramImageWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
