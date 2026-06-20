@@ -2578,14 +2578,8 @@ export const Route = createFileRoute("/api/public/telegram/image-webhook")({
         const legacyAdminRequest =
           /^\/(?:admin|usuario|bloquear|desbloquear|msg|adminadd|adminrem|teste)(?:@\w+)?(?:\s|$)/i.test(
             text,
-          ) ||
-          matchesButton(text, adminLabels.open, legacyAdminLabels.open) ||
-          matchesButton(text, adminLabels.back, legacyAdminLabels.back) ||
-          matchesButton(text, adminLabels.status, legacyAdminLabels.status) ||
-          matchesButton(text, adminLabels.media, legacyAdminLabels.media) ||
-          matchesButton(text, adminLabels.users, legacyAdminLabels.users) ||
-          matchesButton(text, adminLabels.system, legacyAdminLabels.system);
-        if (messageUserIsAdmin && legacyAdminRequest) {
+          ) || matchesButton(text, adminLabels.open, legacyAdminLabels.open);
+        if (legacyAdminRequest) {
           await sendMessageWithTokenReplyKeyboard(
             token,
             chatId,
