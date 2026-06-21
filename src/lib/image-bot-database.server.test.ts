@@ -410,6 +410,14 @@ describe("banco independente do UpMidias", () => {
         preferred_language: "es",
       },
     );
+
+    database.upsertImageBotUser({ telegramUserId: 331, languageCode: "ar", started: true });
+    database.upsertImageBotUser({ telegramUserId: 332, languageCode: "ru-RU", started: true });
+    database.upsertImageBotUser({ telegramUserId: 333, languageCode: "th", started: true });
+
+    expect(database.getImageBotUserLanguage(331)).toBe("ar");
+    expect(database.getImageBotUserLanguage(332)).toBe("ru");
+    expect(database.getImageBotUserLanguage(333)).toBe("th");
   });
 
   it("lista somente usuarios que ja deram start", () => {

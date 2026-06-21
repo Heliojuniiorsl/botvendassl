@@ -59,6 +59,7 @@ import {
   getImageBotTranslation,
   imageBotLanguageChoices,
   imageBotLanguageFromSelection,
+  imageBotLanguages,
   type ImageBotLanguage,
 } from "@/lib/image-bot-i18n";
 import {
@@ -95,7 +96,7 @@ const categoryMenu: ReplyKeyboard = {
 };
 
 const mediaMenu: ReplyKeyboard = {
-  keyboard: [[{ text: "🎲 Mídias" }, { text: "❤️ Favoritos" }], [{ text: "⬅️ Voltar" }]],
+  keyboard: [[{ text: "❤️ Favoritos" }, { text: "🎬 Receba vídeos" }], [{ text: "⬅️ Voltar" }]],
   resize_keyboard: true,
   one_time_keyboard: false,
   is_persistent: true,
@@ -105,7 +106,8 @@ const mediaMenu: ReplyKeyboard = {
 const languageMenu: ReplyKeyboard = {
   keyboard: [
     [{ text: imageBotLanguageChoices.pt }, { text: imageBotLanguageChoices.en }],
-    [{ text: imageBotLanguageChoices.es }],
+    [{ text: imageBotLanguageChoices.es }, { text: imageBotLanguageChoices.ar }],
+    [{ text: imageBotLanguageChoices.ru }, { text: imageBotLanguageChoices.th }],
   ],
   resize_keyboard: true,
   one_time_keyboard: false,
@@ -121,7 +123,22 @@ const legacyCategoryLabels = {
 const legacyMediaLabels = {
   photo: ["Fotos", "📷 Fotos", "ðŸ“· Fotos"],
   video: ["Videos", "Vídeos", "🎥 Vídeos", "ðŸŽ¥ VÃ­deos"],
-  random: ["Aleatorio", "Aleatório", "🎲 Aleatório", "ðŸŽ² AleatÃ³rio"],
+  random: [
+    "Aleatorio",
+    "Aleatório",
+    "🎲 Aleatório",
+    "ðŸŽ² AleatÃ³rio",
+    "Midias",
+    "Mídias",
+    "🎲 Midias",
+    "🎲 Mídias",
+    "Receba videos",
+    "Receba vídeos",
+    "🎬 Receba videos",
+    "🎬 Receba vídeos",
+    "🎥 Receba videos",
+    "🎥 Receba vídeos",
+  ],
   back: ["Voltar", "⬅️ Voltar", "â¬…ï¸ Voltar"],
   favorites: ["Favoritos", "❤️ Favoritos", "â¤ï¸ Favoritos"],
 };
@@ -537,10 +554,10 @@ function imageMediaMenu(
     keyboard: [
       [
         {
-          text: language === "pt" ? settings.random_button_label : translated.mediaButton,
+          text: language === "pt" ? settings.favorites_button_label : translated.favoritesButton,
         },
         {
-          text: language === "pt" ? settings.favorites_button_label : translated.favoritesButton,
+          text: language === "pt" ? settings.random_button_label : translated.mediaButton,
         },
       ],
       ...(showPremiumOffer
@@ -575,9 +592,7 @@ function imageCategoryLabel(
 }
 
 function selectedCategoryFromText(text: string, settings: ImageBotSettingsRow) {
-  const translatedLabels = (["pt", "en", "es"] as ImageBotLanguage[]).map((language) =>
-    getImageBotTranslation(language),
-  );
+  const translatedLabels = imageBotLanguages.map((language) => getImageBotTranslation(language));
   if (
     matchesButton(text, settings.category_hetero_label, [
       ...legacyCategoryLabels.hetero,
@@ -2678,7 +2693,7 @@ export const Route = createFileRoute("/api/public/telegram/image-webhook")({
           );
           return Response.json({ ok: true, language: userLanguage });
         }
-        const languageButtons = (["pt", "en", "es"] as ImageBotLanguage[]).map(
+        const languageButtons = imageBotLanguages.map(
           (language) => getImageBotTranslation(language).languageButton,
         );
         if (languageButtons.some((label) => matchesButton(text, label))) {
@@ -2729,7 +2744,7 @@ export const Route = createFileRoute("/api/public/telegram/image-webhook")({
           return Response.json({ ok: true, category });
         }
 
-        const translatedBackLabels = (["pt", "en", "es"] as ImageBotLanguage[]).map(
+        const translatedBackLabels = imageBotLanguages.map(
           (language) => getImageBotTranslation(language).backButton,
         );
         if (
@@ -2748,7 +2763,7 @@ export const Route = createFileRoute("/api/public/telegram/image-webhook")({
           return Response.json({ ok: true, returnedToCategories: true });
         }
 
-        const translatedPremiumLabels = (["pt", "en", "es"] as ImageBotLanguage[]).map(
+        const translatedPremiumLabels = imageBotLanguages.map(
           (language) => getImageBotTranslation(language).premiumButton,
         );
         if (
@@ -2785,7 +2800,7 @@ export const Route = createFileRoute("/api/public/telegram/image-webhook")({
           return Response.json({ ok: true, premiumMenuOpened: true });
         }
 
-        const translatedMediaLabels = (["pt", "en", "es"] as ImageBotLanguage[]).map(
+        const translatedMediaLabels = imageBotLanguages.map(
           (language) => getImageBotTranslation(language).mediaButton,
         );
         const deliveryType = matchesButton(text, settings.random_button_label, [
@@ -2917,7 +2932,7 @@ export const Route = createFileRoute("/api/public/telegram/image-webhook")({
           return Response.json({ ok: true, mediaDelivered: true });
         }
 
-        const translatedFavoriteLabels = (["pt", "en", "es"] as ImageBotLanguage[]).map(
+        const translatedFavoriteLabels = imageBotLanguages.map(
           (language) => getImageBotTranslation(language).favoritesButton,
         );
         if (

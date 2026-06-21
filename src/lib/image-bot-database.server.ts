@@ -44,11 +44,11 @@ imageBotSqlite.exec(`
     category_trans_label TEXT NOT NULL DEFAULT 'Trans',
     photo_button_label TEXT NOT NULL DEFAULT 'Fotos',
     video_button_label TEXT NOT NULL DEFAULT 'Videos',
-    random_button_label TEXT NOT NULL DEFAULT 'Mídias',
+    random_button_label TEXT NOT NULL DEFAULT '🎬 Receba vídeos',
     back_button_label TEXT NOT NULL DEFAULT 'Voltar',
-    favorites_button_label TEXT NOT NULL DEFAULT 'Favoritos',
+    favorites_button_label TEXT NOT NULL DEFAULT '❤️ Favoritos',
     category_prompt TEXT NOT NULL DEFAULT 'Escolha uma categoria:',
-    media_prompt TEXT NOT NULL DEFAULT '<b>{{categoria}}</b> selecionado. Toque em Mídias para receber uma foto ou vídeo aleatório:',
+    media_prompt TEXT NOT NULL DEFAULT '<b>{{categoria}}</b> selecionado. Toque em Receba vídeos para receber uma mídia aleatória:',
     category_required_message TEXT NOT NULL DEFAULT 'Escolha primeiro uma categoria.',
     empty_media_message TEXT NOT NULL DEFAULT 'Ainda nao ha midias deste tipo.',
     favorites_empty_message TEXT NOT NULL DEFAULT 'Voce ainda nao favoritou nenhuma midia desta categoria.',
@@ -507,14 +507,14 @@ const settingDefaults = [
   ["category_trans_label", "TEXT NOT NULL", "Trans"],
   ["photo_button_label", "TEXT NOT NULL", "Fotos"],
   ["video_button_label", "TEXT NOT NULL", "Videos"],
-  ["random_button_label", "TEXT NOT NULL", "Mídias"],
+  ["random_button_label", "TEXT NOT NULL", "🎬 Receba vídeos"],
   ["back_button_label", "TEXT NOT NULL", "Voltar"],
-  ["favorites_button_label", "TEXT NOT NULL", "Favoritos"],
+  ["favorites_button_label", "TEXT NOT NULL", "❤️ Favoritos"],
   ["category_prompt", "TEXT NOT NULL", "Escolha uma categoria:"],
   [
     "media_prompt",
     "TEXT NOT NULL",
-    "<b>{{categoria}}</b> selecionado. Toque em Mídias para receber uma foto ou vídeo aleatório:",
+    "<b>{{categoria}}</b> selecionado. Toque em Receba vídeos para receber uma mídia aleatória:",
   ],
   ["category_required_message", "TEXT NOT NULL", "Escolha primeiro uma categoria."],
   ["empty_media_message", "TEXT NOT NULL", "Ainda nao ha midias deste tipo."],
@@ -639,18 +639,34 @@ imageBotSqlite
 imageBotSqlite
   .prepare(
     `UPDATE settings
-     SET random_button_label = 'Mídias'
-     WHERE random_button_label IN ('Aleatorio', 'Aleatório', 'Midias')`,
+     SET random_button_label = '🎬 Receba vídeos'
+     WHERE random_button_label IN (
+       'Aleatorio',
+       'Aleatório',
+       'Midias',
+       'Mídias',
+       '🎲 Mídias',
+       'Receba videos',
+       'Receba vídeos'
+     )`,
   )
   .run();
 imageBotSqlite
   .prepare(
     `UPDATE settings
-     SET media_prompt = '<b>{{categoria}}</b> selecionado. Toque em Mídias para receber uma foto ou vídeo aleatório:'
+     SET favorites_button_label = '❤️ Favoritos'
+     WHERE favorites_button_label IN ('Favoritos')`,
+  )
+  .run();
+imageBotSqlite
+  .prepare(
+    `UPDATE settings
+     SET media_prompt = '<b>{{categoria}}</b> selecionado. Toque em Receba vídeos para receber uma mídia aleatória:'
      WHERE media_prompt IN (
        '<b>{{categoria}}</b> selecionado. Escolha o tipo de midia:',
        '<b>{{categoria}}</b> selecionado. Escolha o tipo de mídia:',
-       '<b>{{categoria}}</b> selecionado. Toque em Midias para receber uma foto ou video aleatorio:'
+       '<b>{{categoria}}</b> selecionado. Toque em Midias para receber uma foto ou video aleatorio:',
+       '<b>{{categoria}}</b> selecionado. Toque em Mídias para receber uma foto ou vídeo aleatório:'
      )`,
   )
   .run();

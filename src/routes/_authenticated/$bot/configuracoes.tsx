@@ -295,7 +295,7 @@ function ImageBotSettings() {
                 teclado do bot.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-2xl border bg-muted/30 p-4">
                 <div className="font-medium">🇧🇷 Português</div>
                 <div className="mt-1 text-xs text-muted-foreground">Idioma padrão</div>
@@ -308,10 +308,22 @@ function ImageBotSettings() {
                 <div className="font-medium">🇪🇸 Español</div>
                 <div className="mt-1 text-xs text-muted-foreground">Tradução automática ativa</div>
               </div>
+              <div className="rounded-2xl border bg-muted/30 p-4">
+                <div className="font-medium">🇸🇦 العربية</div>
+                <div className="mt-1 text-xs text-muted-foreground">Tradução automática ativa</div>
+              </div>
+              <div className="rounded-2xl border bg-muted/30 p-4">
+                <div className="font-medium">🇷🇺 Русский</div>
+                <div className="mt-1 text-xs text-muted-foreground">Tradução automática ativa</div>
+              </div>
+              <div className="rounded-2xl border bg-muted/30 p-4">
+                <div className="font-medium">🇹🇭 ไทย</div>
+                <div className="mt-1 text-xs text-muted-foreground">Tradução automática ativa</div>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">
               As mensagens personalizadas em português continuam sendo usadas para usuários em
-              português. Inglês e espanhol usam as traduções internas do sistema.
+              português. Os outros idiomas usam as traduções internas do sistema.
             </p>
           </Card>
         </div>
@@ -344,7 +356,7 @@ function ImageBotSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="random_button_label">Botão de mídias</Label>
+                <Label htmlFor="random_button_label">Botão Receba vídeos</Label>
                 <Input
                   id="random_button_label"
                   name="random_button_label"
@@ -352,11 +364,12 @@ function ImageBotSettings() {
                   defaultValue={settings.random_button_label}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Envia aleatoriamente uma foto ou vídeo da categoria escolhida.
+                  Fica do lado direito do teclado e envia uma mídia aleatória da categoria
+                  escolhida.
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="favorites_button_label">Botão favoritos</Label>
+                <Label htmlFor="favorites_button_label">Botão Favoritos</Label>
                 <Input
                   id="favorites_button_label"
                   name="favorites_button_label"
