@@ -50,6 +50,18 @@ const DEFAULT_BUTTONS: MenuButton[] = [
   { id: "terms", label: "📜 Termos e regras", action: "terms", value: "", enabled: true },
 ];
 
+type WelcomeMode = "custom" | "telegram_message" | "telegram_file";
+type TelegramFileType = "photo" | "video";
+
+function parseTelegramFileReference(value: unknown) {
+  const match = /^telegram-file:\/\/(photo|video)\/(.+)$/i.exec(String(value ?? ""));
+  if (!match) return null;
+  return {
+    type: match[1].toLowerCase() as TelegramFileType,
+    fileId: match[2],
+  };
+}
+
 type ImageBotSettingsData = {
   id: string;
   welcome_message: string;
@@ -545,9 +557,20 @@ function SalesBotSettings() {
     queryOptions({ queryKey: ["settings"], queryFn: () => getFn() as Promise<any> }),
   );
 
-  const [imageUrl, setImageUrl] = useState<string>(settings.welcome_image_url ?? "");
-  const [welcomeMode, setWelcomeMode] = useState<"custom" | "telegram_message">(
-    settings.welcome_mode === "telegram_message" ? "telegram_message" : "custom",
+  const storedTelegramFile = parseTelegramFileReference(settings.welcome_image_url);
+  const [imageUrl, setImageUrl] = useState<string>(
+    storedTelegramFile ? "" : (settings.welcome_image_url ?? ""),
+  );
+  const [telegramFileId, setTelegramFileId] = useState(storedTelegramFile?.fileId ?? "");
+  const [telegramFileType, setTelegramFileType] = useState<TelegramFileType>(
+    storedTelegramFile?.type ?? "video",
+  );
+  const [welcomeMode, setWelcomeMode] = useState<WelcomeMode>(
+    settings.welcome_mode === "telegram_message"
+      ? "telegram_message"
+      : storedTelegramFile
+        ? "telegram_file"
+        : "custom",
   );
   const fromDb = Array.isArray(settings.menu_buttons) ? settings.menu_buttons : null;
   const buttons =
@@ -581,11 +604,17 @@ function SalesBotSettings() {
     const f = new FormData(e.currentTarget);
     const sourceChatId = String(f.get("welcome_source_chat_id") || "").trim();
     const sourceMessageId = String(f.get("welcome_source_message_id") || "").trim();
+    const cleanTelegramFileId = telegramFileId.trim();
     save.mutate({
       id: settings.id,
       welcome_message: String(f.get("welcome_message") || settings.welcome_message || "Bem-vindo"),
-      welcome_image_url: welcomeMode === "custom" ? imageUrl || null : null,
-      welcome_mode: welcomeMode,
+      welcome_image_url:
+        welcomeMode === "custom"
+          ? imageUrl || null
+          : welcomeMode === "telegram_file" && cleanTelegramFileId
+            ? `telegram-file://${telegramFileType}/${cleanTelegramFileId}`
+            : null,
+      welcome_mode: welcomeMode === "telegram_message" ? "telegram_message" : "custom",
       welcome_source_chat_id:
         welcomeMode === "telegram_message" && sourceChatId ? Number(sourceChatId) : null,
       welcome_source_message_id:
@@ -629,7 +658,7 @@ function SalesBotSettings() {
             <Label>Origem da mensagem</Label>
             <Select
               value={welcomeMode}
-              onValueChange={(value) => setWelcomeMode(value as "custom" | "telegram_message")}
+              onValueChange={(value) => setWelcomeMode(value as WelcomeMode)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -637,6 +666,7 @@ function SalesBotSettings() {
               <SelectContent>
                 <SelectItem value="custom">Texto + foto ou video do painel</SelectItem>
                 <SelectItem value="telegram_message">Mensagem pronta do Telegram</SelectItem>
+                <SelectItem value="telegram_file">File ID do Telegram</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -667,6 +697,51 @@ function SalesBotSettings() {
                 />
               </div>
             </>
+          ) : welcomeMode === "telegram_file" ? (
+            <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
+              <div>
+                <p className="font-medium">Mídia pelo File ID do Telegram</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Envia a mídia já armazenada pelo Telegram sem hospedar o arquivo novamente.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="welcome_file_message">Mensagem inicial do bot</Label>
+                <Textarea
+                  id="welcome_file_message"
+                  name="welcome_message"
+                  rows={4}
+                  defaultValue={settings.welcome_message}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-[160px_1fr]">
+                <div className="space-y-2">
+                  <Label>Tipo da mídia</Label>
+                  <Select
+                    value={telegramFileType}
+                    onValueChange={(value) => setTelegramFileType(value as TelegramFileType)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="video">Vídeo</SelectItem>
+                      <SelectItem value="photo">Foto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="welcome_telegram_file_id">File ID</Label>
+                  <Input
+                    id="welcome_telegram_file_id"
+                    value={telegramFileId}
+                    onChange={(event) => setTelegramFileId(event.target.value)}
+                    placeholder="BAACAgEAAxkB..."
+                    required
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
               <input

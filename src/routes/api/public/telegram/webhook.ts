@@ -191,6 +191,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return /\.(mp4|mov|m4v|webm)(?:[?#].*)?$/i.test(value);
         }
 
+        function parseTelegramFileReference(value: string) {
+          const match = /^telegram-file:\/\/(photo|video)\/(.+)$/i.exec(value);
+          if (!match) return null;
+          return {
+            type: match[1].toLowerCase() as "photo" | "video",
+            fileId: match[2],
+          };
+        }
+
         function isActiveOffer(offer: any, now = Date.now()) {
           return (
             (offer.plan_ids?.length ?? 0) > 0 &&
@@ -279,7 +288,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               : "Escolha um plano abaixo.";
           const caption = `${text}\n\n${prompt}`;
           if (settings?.welcome_image_url) {
-            if (looksLikeVideoUrl(settings.welcome_image_url)) {
+            const telegramFile = parseTelegramFileReference(settings.welcome_image_url);
+            if (telegramFile?.type === "video") {
+              await sendVideo(chatId, telegramFile.fileId, caption, keyboard);
+            } else if (telegramFile?.type === "photo") {
+              await sendPhoto(chatId, telegramFile.fileId, caption, keyboard);
+            } else if (looksLikeVideoUrl(settings.welcome_image_url)) {
               await sendVideo(chatId, settings.welcome_image_url, caption, keyboard);
             } else {
               await sendPhoto(chatId, settings.welcome_image_url, caption, keyboard);
