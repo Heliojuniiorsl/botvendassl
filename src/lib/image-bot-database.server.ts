@@ -1423,8 +1423,9 @@ export type ImageBotGroupAutomationRow = {
 
 export type ImageBotAutomationPlanButton = {
   label: string;
-  kind: "premium_plans" | "premium_plan";
+  kind: "premium_plans" | "premium_plan" | "bot_link";
   plan_id?: string | null;
+  url?: string | null;
 };
 
 export type ImageBotGroupAutomationInput = {
@@ -1452,7 +1453,9 @@ function parseImageBotAutomationButtons(value: string): ImageBotAutomationPlanBu
       (button): button is ImageBotAutomationPlanButton =>
         Boolean(button) &&
         typeof button.label === "string" &&
-        (button.kind === "premium_plans" || button.kind === "premium_plan"),
+        (button.kind === "premium_plans" ||
+          button.kind === "premium_plan" ||
+          (button.kind === "bot_link" && typeof button.url === "string")),
     );
   } catch {
     return [];

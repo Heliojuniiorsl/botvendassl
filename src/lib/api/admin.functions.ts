@@ -886,6 +886,19 @@ const imageBotAutomationButtonSchema = z.discriminatedUnion("kind", [
     kind: z.literal("premium_plan"),
     plan_id: uuid,
   }),
+  z.object({
+    label: z.string().trim().min(1).max(64),
+    kind: z.literal("bot_link"),
+    plan_id: z.null().optional(),
+    url: z
+      .string()
+      .trim()
+      .max(500)
+      .url("Informe um link valido")
+      .refine((value) => /^https:\/\/(?:t|telegram)\.me\//i.test(value), {
+        message: "Use um link do Telegram, como https://t.me/seu_bot",
+      }),
+  }),
 ]);
 
 const imageBotGroupAutomationSchema = z

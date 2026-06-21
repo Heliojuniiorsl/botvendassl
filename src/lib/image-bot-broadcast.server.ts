@@ -55,6 +55,9 @@ function buildPlanKeyboard(buttons: ImageBotAutomationPlanButton[]): InlineKeybo
           },
         ];
       }
+      if (button.kind === "bot_link" && button.url) {
+        return [{ text: button.label, url: button.url }];
+      }
       return null;
     })
     .filter(Boolean) as InlineKeyboard;

@@ -136,8 +136,9 @@ type ImageGroupAutomation = {
 
 type ImageAutomationButton = {
   label: string;
-  kind: "premium_plans" | "premium_plan";
+  kind: "premium_plans" | "premium_plan" | "bot_link";
   plan_id?: string | null;
+  url?: string | null;
 };
 
 type ImageMediaOption = {
@@ -232,7 +233,9 @@ function ImageBotGroups() {
     }),
   );
   const activeGroups = groups.filter((group) => group.is_active).length;
-  const activeChannels = groups.filter((group) => group.is_active && group.type === "channel").length;
+  const activeChannels = groups.filter(
+    (group) => group.is_active && group.type === "channel",
+  ).length;
   const needsMediaPermission = groups.some(
     (group) => group.is_active && !["creator", "administrator"].includes(group.bot_status),
   );
@@ -372,6 +375,7 @@ function ImageBotGroups() {
           label: button.label.trim(),
           kind: button.kind,
           plan_id: button.kind === "premium_plan" ? button.plan_id : null,
+          url: button.kind === "bot_link" ? button.url?.trim() : null,
         })),
       interval_minutes: Number(form.get("interval_minutes")),
       is_active: form.get("is_active") === "on",
@@ -841,9 +845,9 @@ function ImageBotGroups() {
             <Card className="space-y-3 border-dashed p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <Label>Botoes de planos</Label>
+                  <Label>Botões da mensagem</Label>
                   <p className="text-xs text-muted-foreground">
-                    Abra todos os planos Premium ou somente um plano escolhido.
+                    Abra planos Premium ou leve o usuário diretamente para outro bot.
                   </p>
                 </div>
                 <Button
@@ -858,7 +862,7 @@ function ImageBotGroups() {
                 </Button>
               </div>
               {!automationButtons.length && (
-                <p className="text-xs text-muted-foreground">Nenhum botao de plano configurado.</p>
+                <p className="text-xs text-muted-foreground">Nenhum botão configurado.</p>
               )}
               {automationButtons.map((button, index) => (
                 <div key={index} className="space-y-2 rounded-xl border bg-background p-3">
@@ -886,6 +890,7 @@ function ImageBotGroups() {
                       updateImageAutomationButton(index, {
                         kind: value as ImageAutomationButton["kind"],
                         plan_id: value === "premium_plan" ? button.plan_id : null,
+                        url: value === "bot_link" ? button.url : null,
                       })
                     }
                   >
@@ -895,6 +900,7 @@ function ImageBotGroups() {
                     <SelectContent>
                       <SelectItem value="premium_plans">Todos os planos Premium</SelectItem>
                       <SelectItem value="premium_plan">Somente um plano Premium</SelectItem>
+                      <SelectItem value="bot_link">Abrir bot pelo link</SelectItem>
                     </SelectContent>
                   </Select>
                   {button.kind === "premium_plan" && (
@@ -921,6 +927,24 @@ function ImageBotGroups() {
                           ))}
                       </SelectContent>
                     </Select>
+                  )}
+                  {button.kind === "bot_link" && (
+                    <div className="space-y-2">
+                      <Label htmlFor={`image-group-bot-link-${index}`}>Link do bot</Label>
+                      <Input
+                        id={`image-group-bot-link-${index}`}
+                        type="url"
+                        value={button.url ?? ""}
+                        onChange={(event) =>
+                          updateImageAutomationButton(index, { url: event.target.value })
+                        }
+                        placeholder="https://t.me/usuario_do_bot"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use o link público do bot. Ao tocar, o usuário abre a conversa no Telegram.
+                      </p>
+                    </div>
                   )}
                 </div>
               ))}
@@ -1031,7 +1055,9 @@ function SalesBotGroups() {
   const groups = groupsQuery.data;
   const messages = messagesQuery.data ?? [];
   const activeGroups = groups.filter((group) => group.is_active).length;
-  const activeChannels = groups.filter((group) => group.is_active && group.type === "channel").length;
+  const activeChannels = groups.filter(
+    (group) => group.is_active && group.type === "channel",
+  ).length;
 
   function openNewMessage() {
     setEditing(null);

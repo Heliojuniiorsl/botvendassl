@@ -169,6 +169,11 @@ describe("banco independente do UpMidias", () => {
           kind: "premium_plan",
           plan_id: "11111111-1111-4111-8111-111111111111",
         },
+        {
+          label: "Abrir bot",
+          kind: "bot_link",
+          url: "https://t.me/upmidias_bot",
+        },
       ],
       intervalMinutes: 5,
       isActive: true,
@@ -180,6 +185,11 @@ describe("banco independente do UpMidias", () => {
         label: "Plano escolhido",
         kind: "premium_plan",
         plan_id: "11111111-1111-4111-8111-111111111111",
+      },
+      {
+        label: "Abrir bot",
+        kind: "bot_link",
+        url: "https://t.me/upmidias_bot",
       },
     ]);
 
