@@ -7,8 +7,12 @@ const mimeTypes: Record<string, string> = {
   ".gif": "image/gif",
   ".jpeg": "image/jpeg",
   ".jpg": "image/jpeg",
+  ".m4v": "video/mp4",
+  ".mov": "video/quicktime",
+  ".mp4": "video/mp4",
   ".png": "image/png",
   ".webp": "image/webp",
+  ".webm": "video/webm",
 };
 
 // Public, read-only proxy that streams files from the private `bot-media`

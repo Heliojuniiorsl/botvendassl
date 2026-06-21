@@ -1,6 +1,9 @@
 // Server-only Telegram Bot API helpers. Bot tokens are never exposed to the client.
 
-import { getActiveSalesBotToken } from "@/lib/sales-bot-runtime.server";
+import {
+  getActiveSalesBotPublicBaseUrl,
+  getActiveSalesBotToken,
+} from "@/lib/sales-bot-runtime.server";
 
 const API_BASE = "https://api.telegram.org";
 const TELEGRAM_API_TIMEOUT_MS = 12_000;
@@ -27,7 +30,7 @@ function createTimeoutSignal(timeoutMs = TELEGRAM_API_TIMEOUT_MS) {
 
 export function resolveTelegramFileReference(
   value: string,
-  publicBaseUrl = process.env.PUBLIC_BASE_URL,
+  publicBaseUrl = getActiveSalesBotPublicBaseUrl(),
 ) {
   const baseUrl = publicBaseUrl?.replace(/\/$/, "");
   if (value.startsWith("/") && baseUrl) return `${baseUrl}${value}`;
@@ -349,6 +352,18 @@ export function copyMessage(
     from_chat_id: fromChatId,
     message_id: messageId,
     ...(keyboard ? { reply_markup: { inline_keyboard: keyboard } } : {}),
+  });
+}
+
+export function editMessageReplyMarkup(
+  chatId: number | string,
+  messageId: number,
+  keyboard: InlineKeyboard,
+) {
+  return call("editMessageReplyMarkup", {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: { inline_keyboard: keyboard },
   });
 }
 

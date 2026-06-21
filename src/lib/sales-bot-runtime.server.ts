@@ -7,6 +7,7 @@ export type SalesBotRuntime = {
   databasePath: string;
   username: string;
   isPrimary: boolean;
+  publicBaseUrl?: string;
 };
 
 const runtimeStorage = new AsyncLocalStorage<SalesBotRuntime | null>();
@@ -28,6 +29,10 @@ export function runWithSalesBotRuntime<T>(
 
 export function getActiveSalesBotToken() {
   return getSalesBotRuntime()?.token ?? process.env.TELEGRAM_BOT_TOKEN?.trim() ?? null;
+}
+
+export function getActiveSalesBotPublicBaseUrl() {
+  return getSalesBotRuntime()?.publicBaseUrl ?? process.env.PUBLIC_BASE_URL?.trim() ?? null;
 }
 
 export function getSalesPaymentReference(orderId: string) {

@@ -20,6 +20,7 @@ import {
   deleteMessage,
   declineChatJoinRequest,
   editMessageCaption,
+  editMessageReplyMarkup,
   editMessageText,
   getChatMemberCount,
   sendMessage,
@@ -126,7 +127,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const runtimeSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
         const runtime = resolveSalesBotRuntimeByWebhookSecret(runtimeSecret);
         const token = runtime?.token;
-        if (runtime) enterSalesBotRuntime(runtime);
+        if (runtime) {
+          enterSalesBotRuntime({
+            ...runtime,
+            publicBaseUrl: new URL(request.url).origin,
+          });
+        }
         if (!runtime || !token) return new Response("Unauthorized", { status: 401 });
 
         const contentLength = Number(request.headers.get("content-length") ?? 0);
@@ -239,12 +245,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             settings.welcome_source_message_id
           ) {
             try {
-              await copyMessage(
+              const copied = await copyMessage(
                 chatId,
                 settings.welcome_source_chat_id,
                 Number(settings.welcome_source_message_id),
-                keyboard,
               );
+              const copiedMessageId = Number(copied.result?.message_id);
+              if (copiedMessageId) {
+                try {
+                  await editMessageReplyMarkup(chatId, copiedMessageId, keyboard);
+                } catch (error) {
+                  console.error("[welcome-ready-message-buttons]", error);
+                  await sendMessage(chatId, "Escolha uma oferta ou plano abaixo.", keyboard);
+                }
+              } else {
+                await sendMessage(chatId, "Escolha uma oferta ou plano abaixo.", keyboard);
+              }
               if (options.deleteMessageId) {
                 await deleteMessage(chatId, options.deleteMessageId).catch(() => undefined);
               }
