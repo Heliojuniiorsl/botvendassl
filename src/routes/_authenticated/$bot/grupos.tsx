@@ -155,7 +155,7 @@ type ImageMediaOption = {
   created_at: string;
 };
 
-type ButtonKind = "link" | "plans" | "plan" | "offers";
+type ButtonKind = "link" | "bot" | "plans" | "plan" | "offers";
 type GroupButton = {
   label: string;
   kind: ButtonKind;
@@ -165,6 +165,7 @@ type GroupButton = {
 
 const buttonKindLabels: Record<ButtonKind, string> = {
   link: "Link externo",
+  bot: "Abrir bot do Telegram",
   plans: "Abrir planos",
   plan: "Abrir um plano",
   offers: "Abrir ofertas",
@@ -204,6 +205,17 @@ const groupSections: { value: GroupSection; label: string }[] = [
 
 function formatDate(value: string | null) {
   return value ? new Date(value).toLocaleString("pt-BR") : "—";
+}
+
+function normalizeTelegramBotUrl(value: string | null | undefined) {
+  const input = value?.trim() ?? "";
+  if (!input) return null;
+  const username = input
+    .replace(/^https?:\/\/(?:t|telegram)\.me\//i, "")
+    .replace(/^@/, "")
+    .split(/[/?#]/, 1)[0];
+  if (!/^[A-Za-z0-9_]{5,32}$/.test(username)) return null;
+  return `https://t.me/${username}`;
 }
 
 function Grupos() {
@@ -1138,7 +1150,12 @@ function SalesBotGroups() {
       .map((button) => ({
         label: button.label.trim(),
         kind: button.kind,
-        url: button.kind === "link" ? (button.url ?? "").trim() : null,
+        url:
+          button.kind === "link"
+            ? (button.url ?? "").trim()
+            : button.kind === "bot"
+              ? normalizeTelegramBotUrl(button.url)
+              : null,
         plan_id: button.kind === "plan" ? button.plan_id : null,
       }));
     const invalidLink = buttons.find(
@@ -1146,6 +1163,11 @@ function SalesBotGroups() {
     );
     if (invalidLink) {
       toast.error(`O botão "${invalidLink.label}" precisa de um link começando com https://`);
+      return;
+    }
+    const invalidBot = buttons.find((button) => button.kind === "bot" && !button.url);
+    if (invalidBot) {
+      toast.error(`O botão "${invalidBot.label}" precisa do @usuario ou link t.me do bot`);
       return;
     }
     saveMessage.mutate({
@@ -1489,7 +1511,7 @@ function SalesBotGroups() {
                     onValueChange={(value) =>
                       updateMessageButton(index, {
                         kind: value as ButtonKind,
-                        url: value === "link" ? button.url : null,
+                        url: value === "link" || value === "bot" ? button.url : null,
                         plan_id: value === "plan" ? button.plan_id : null,
                       })
                     }
@@ -1512,6 +1534,20 @@ function SalesBotGroups() {
                       type="url"
                       placeholder="https://..."
                     />
+                  )}
+                  {button.kind === "bot" && (
+                    <div className="space-y-2">
+                      <Input
+                        value={button.url ?? ""}
+                        onChange={(event) =>
+                          updateMessageButton(index, { url: event.target.value })
+                        }
+                        placeholder="@brunabbgg_bot ou https://t.me/brunabbgg_bot"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Apenas abre a conversa do bot. Não envia mensagem automática no privado.
+                      </p>
+                    </div>
                   )}
                   {button.kind === "plan" && (
                     <Select

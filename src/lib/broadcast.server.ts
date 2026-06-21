@@ -4,7 +4,7 @@ import { sqlite } from "@/lib/database.server";
 
 export type BroadcastButton = {
   label: string;
-  kind: "link" | "plans" | "plan" | "contents" | "offers" | "menu";
+  kind: "link" | "bot" | "plans" | "plan" | "contents" | "offers" | "menu";
   url?: string | null;
   plan_id?: string | null;
 };
@@ -40,6 +40,17 @@ export type GroupBroadcastRow = {
   locked_at: string | null;
 };
 
+function normalizeTelegramBotUrl(value: string | null | undefined) {
+  const input = value?.trim() ?? "";
+  if (!input) return null;
+  const username = input
+    .replace(/^https?:\/\/(?:t|telegram)\.me\//i, "")
+    .replace(/^@/, "")
+    .split(/[/?#]/, 1)[0];
+  if (!/^[A-Za-z0-9_]{5,32}$/.test(username)) return null;
+  return `https://t.me/${username}`;
+}
+
 function buildKeyboard(
   buttons: BroadcastButton[],
   options: { openPlansInPrivate?: boolean } = {},
@@ -49,6 +60,10 @@ function buildKeyboard(
       if (button.kind === "link") {
         if (!button.url) return null;
         return { text: button.label, url: button.url };
+      }
+      if (button.kind === "bot") {
+        const url = normalizeTelegramBotUrl(button.url);
+        return url ? { text: button.label, url } : null;
       }
       if (button.kind === "plan") {
         if (!button.plan_id) return null;
@@ -78,6 +93,9 @@ function validateButtons(buttons: BroadcastButton[]) {
       throw new Error(
         `O botão "${button.label}" precisa de um link completo começando com https://`,
       );
+    }
+    if (button.kind === "bot" && !normalizeTelegramBotUrl(button.url)) {
+      throw new Error(`O botão "${button.label}" precisa do @usuario ou link do bot`);
     }
   }
 }

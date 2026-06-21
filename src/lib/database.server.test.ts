@@ -299,6 +299,7 @@ describe("SQLite local", () => {
         message: "Escolha uma opcao",
         buttons: [
           { label: "Site", kind: "link", url: "https://example.com" },
+          { label: "Abrir bot", kind: "bot", url: "@brunabbgg_bot" },
           { label: "Planos", kind: "plans", url: null },
           { label: "Plano escolhido", kind: "plan", plan_id: plan.data.id, url: null },
         ],
@@ -315,6 +316,7 @@ describe("SQLite local", () => {
     expect(body.chat_id).toBe(-1001234567891);
     expect(body.reply_markup.inline_keyboard).toEqual([
       [{ text: "Site", url: "https://example.com" }],
+      [{ text: "Abrir bot", url: "https://t.me/brunabbgg_bot" }],
       [{ text: "Planos", callback_data: "auto_plans" }],
       [{ text: "Plano escolhido", callback_data: `auto_plan_${plan.data.id}` }],
     ]);

@@ -1127,6 +1127,21 @@ const groupBroadcastButtonSchema = z.discriminatedUnion("kind", [
   }),
   z.object({
     label: z.string().min(1).max(64),
+    kind: z.literal("bot"),
+    url: z
+      .string()
+      .trim()
+      .max(500)
+      .refine(
+        (value) =>
+          /^@?[A-Za-z0-9_]{5,32}$/.test(value) ||
+          /^https?:\/\/(?:t|telegram)\.me\/[A-Za-z0-9_]{5,32}(?:[/?#].*)?$/i.test(value),
+        "Informe o @usuario ou link t.me do bot",
+      ),
+    plan_id: z.null().optional(),
+  }),
+  z.object({
+    label: z.string().min(1).max(64),
     kind: z.enum(["plans", "offers"]),
     url: z.null().optional(),
   }),
