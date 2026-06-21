@@ -14,6 +14,7 @@ import {
   ExternalLink,
   FileText,
   Image as ImageIcon,
+  LogOut,
   MessagesSquare,
   Pencil,
   Plus,
@@ -67,6 +68,8 @@ import {
   listImageBotPremiumPlans,
   listPlans,
   listTelegramGroups,
+  leaveImageBotGroup,
+  leaveTelegramGroup,
   saveGroupBroadcast,
   saveImageBotGroupAutomation,
   sendImageBotGroupAutomationNow,
@@ -217,6 +220,7 @@ function ImageBotGroups() {
   const sendAutomationFn = useServerFn(sendImageBotGroupAutomationNow);
   const listMediaFn = useServerFn(listImageBotMedia);
   const listPremiumPlansFn = useServerFn(listImageBotPremiumPlans);
+  const leaveGroupFn = useServerFn(leaveImageBotGroup);
   const groupsQuery = useSuspenseQuery(
     queryOptions({
       queryKey: ["image-bot-groups"],
@@ -295,6 +299,15 @@ function ImageBotGroups() {
     onSuccess: () => {
       refreshAutomations();
       toast.success("Automação enviada ao grupo");
+    },
+    onError: (error: any) => toast.error(error.message),
+  });
+  const leaveGroup = useMutation({
+    mutationFn: (groupId: string) => leaveGroupFn({ data: { group_id: groupId } }),
+    onSuccess: () => {
+      setSelectedGroup(null);
+      qc.invalidateQueries({ queryKey: ["image-bot-groups"] });
+      toast.success("UpMidias removido do grupo ou canal");
     },
     onError: (error: any) => toast.error(error.message),
   });
@@ -538,6 +551,25 @@ function ImageBotGroups() {
                     </Button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Privado</span>
+                  )}
+                  {group.is_active && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Remover o bot deste grupo ou canal"
+                      disabled={leaveGroup.isPending}
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Remover o UpMidias de "${group.title}"? O bot sairá do grupo ou canal.`,
+                          )
+                        ) {
+                          leaveGroup.mutate(group.id);
+                        }
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 text-destructive" />
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
@@ -993,6 +1025,7 @@ function SalesBotGroups() {
   const deleteMessageFn = useServerFn(deleteGroupBroadcast);
   const sendMessageFn = useServerFn(sendGroupBroadcastNow);
   const listPlansFn = useServerFn(listPlans);
+  const leaveGroupFn = useServerFn(leaveTelegramGroup);
   const groupsQuery = useSuspenseQuery(
     queryOptions({
       queryKey: ["telegram-groups"],
@@ -1048,6 +1081,15 @@ function SalesBotGroups() {
     onSuccess: () => {
       refreshMessages();
       toast.success("Mensagem enviada ao grupo");
+    },
+    onError: (error: any) => toast.error(error.message),
+  });
+  const leaveGroup = useMutation({
+    mutationFn: (groupId: string) => leaveGroupFn({ data: { group_id: groupId } }),
+    onSuccess: () => {
+      setSelectedGroup(null);
+      qc.invalidateQueries({ queryKey: ["telegram-groups"] });
+      toast.success("Bot removido do grupo ou canal");
     },
     onError: (error: any) => toast.error(error.message),
   });
@@ -1234,6 +1276,24 @@ function SalesBotGroups() {
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
+                    </Button>
+                  )}
+                  {group.is_active && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Remover o bot deste grupo ou canal"
+                      disabled={leaveGroup.isPending}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (
+                          confirm(`Remover o bot de "${group.title}"? Ele sairá do grupo ou canal.`)
+                        ) {
+                          leaveGroup.mutate(group.id);
+                        }
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
                 </TableCell>

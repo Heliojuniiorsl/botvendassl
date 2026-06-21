@@ -7,14 +7,14 @@ import Database from "better-sqlite3";
 
 import { requireAdminSession } from "@/lib/auth.server";
 import { controlManagedBot, getManagedBotToken, listManagedBots } from "@/lib/bot-manager.server";
-import { getTelegramGroups, localDb, sqlite } from "@/lib/database.server";
+import { getTelegramGroups, localDb, sqlite, upsertTelegramGroup } from "@/lib/database.server";
 import { getEnvSettingsForPanel, saveEnvSettingsFromPanel } from "@/lib/env-settings.server";
 import {
   createSalesBotClone,
   findSalesBotCloneByUsername,
   salesBotCloneRuntime,
 } from "@/lib/sales-bot-registry.server";
-import { enterSalesBotRuntime } from "@/lib/sales-bot-runtime.server";
+import { enterSalesBotRuntime, getActiveSalesBotToken } from "@/lib/sales-bot-runtime.server";
 import {
   deleteImageBotMediaMany,
   deleteImageBotMedia,
@@ -54,6 +54,7 @@ import {
   getBotInfoWithToken,
   getChatMemberCountWithToken,
   getChatMemberWithToken,
+  leaveChatWithToken,
   sendMessageWithToken,
 } from "@/lib/telegram.server";
 
@@ -823,6 +824,29 @@ export const listTelegramGroups = createServerFn({ method: "GET" }).handler(asyn
   return getTelegramGroups();
 });
 
+export const leaveTelegramGroup = createServerFn({ method: "POST" })
+  .validator(z.object({ group_id: uuid }))
+  .handler(async ({ data }) => {
+    await admin();
+    const group = getTelegramGroups().find((item) => item.id === data.group_id);
+    if (!group) throw new Error("Grupo ou canal nao encontrado");
+    if (!group.is_active) return group;
+
+    const token = getActiveSalesBotToken();
+    if (!token) throw new Error("Token do bot de vendas nao configurado");
+    await leaveChatWithToken(token, group.telegram_chat_id);
+
+    return upsertTelegramGroup({
+      telegramChatId: group.telegram_chat_id,
+      title: group.title,
+      username: group.username,
+      type: group.type,
+      botStatus: "left",
+      isActive: false,
+      memberCount: group.member_count,
+    });
+  });
+
 async function syncImageBotGroupsWithTelegram(
   token: string,
   groups: ReturnType<typeof getImageBotGroups>,
@@ -866,6 +890,39 @@ export const listImageBotGroups = createServerFn({ method: "GET" }).handler(asyn
   }
   return groups;
 });
+
+export const leaveImageBotGroup = createServerFn({ method: "POST" })
+  .validator(z.object({ group_id: uuid }))
+  .handler(async ({ data }) => {
+    await admin();
+    const group = getImageBotGroups().find((item) => item.id === data.group_id);
+    if (!group) throw new Error("Grupo do UpMidias nao encontrado");
+    if (!group.is_active) return group;
+
+    const token = getManagedBotToken("images");
+    if (!token) throw new Error("Token do UpMidias nao configurado");
+    await leaveChatWithToken(token, group.telegram_chat_id);
+
+    const updated = upsertImageBotGroup({
+      telegramChatId: group.telegram_chat_id,
+      title: group.title,
+      username: group.username,
+      type: group.type,
+      botStatus: "left",
+      isActive: false,
+      memberCount: group.member_count,
+    });
+    const session = requireAdminSession();
+    recordImageBotAuditLog({
+      actorType: "panel",
+      actorId: session.email,
+      action: "group.leave",
+      entityType: "group",
+      entityId: group.id,
+      details: JSON.stringify({ telegram_chat_id: group.telegram_chat_id }),
+    });
+    return updated;
+  });
 
 const imageBotGroupAutomationKind = z.enum([
   "text",

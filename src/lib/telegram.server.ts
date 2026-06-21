@@ -518,6 +518,10 @@ export function getChatMemberWithToken(
   );
 }
 
+export function leaveChatWithToken(token: string, chatId: number | string) {
+  return callWithToken(token, "leaveChat", { chat_id: chatId });
+}
+
 export function answerCallbackQuery(callbackQueryId: string, text?: string, showAlert = false) {
   return call("answerCallbackQuery", {
     callback_query_id: callbackQueryId,
