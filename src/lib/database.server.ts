@@ -34,7 +34,7 @@ function activeSqlite() {
   if (existing) return existing;
   mkdirSync(dirname(clonePath), { recursive: true });
   const database = configureDatabase(new Database(clonePath));
-  ensureTelegramGroupsSupportsChannels(database);
+  ensureSalesDatabaseMigrations(database);
   cloneDatabases.set(clonePath, database);
   return database;
 }
@@ -295,10 +295,15 @@ sqlite.exec(`
 
 `);
 
-function addColumnIfMissing(table: string, column: string, definition: string) {
-  const columns = sqlite.prepare(`PRAGMA table_info(${assertIdentifier(table)})`).all() as Row[];
+function addColumnIfMissing(
+  table: string,
+  column: string,
+  definition: string,
+  database: Database.Database = sqlite,
+) {
+  const columns = database.prepare(`PRAGMA table_info(${assertIdentifier(table)})`).all() as Row[];
   if (!columns.some((item) => item.name === column)) {
-    sqlite.exec(
+    database.exec(
       `ALTER TABLE ${assertIdentifier(table)} ADD COLUMN ${assertIdentifier(column)} ${definition}`,
     );
   }
@@ -343,6 +348,60 @@ function ensureTelegramGroupsSupportsChannels(database: Database.Database = sqli
   } finally {
     database.pragma("foreign_keys = ON");
   }
+}
+
+function ensureSalesDatabaseMigrations(database: Database.Database = sqlite) {
+  ensureTelegramGroupsSupportsChannels(database);
+  addColumnIfMissing("users", "email", "TEXT", database);
+  addColumnIfMissing("users", "is_blocked", "INTEGER NOT NULL DEFAULT 0", database);
+  addColumnIfMissing("users", "notes", "TEXT", database);
+  addColumnIfMissing("users", "tags", "TEXT NOT NULL DEFAULT '[]'", database);
+  addColumnIfMissing("users", "last_interaction_at", "TEXT", database);
+  addColumnIfMissing("plans", "promo_price", "REAL", database);
+  addColumnIfMissing("plans", "promo_starts_at", "TEXT", database);
+  addColumnIfMissing("plans", "promo_ends_at", "TEXT", database);
+  addColumnIfMissing("plans", "button_label", "TEXT", database);
+  addColumnIfMissing("plans", "detail_message", "TEXT", database);
+  addColumnIfMissing("plans", "renewal_enabled", "INTEGER NOT NULL DEFAULT 1", database);
+  addColumnIfMissing("plans", "description_mode", "TEXT NOT NULL DEFAULT 'custom'", database);
+  addColumnIfMissing("plans", "description_source_chat_id", "INTEGER", database);
+  addColumnIfMissing("plans", "description_source_message_id", "INTEGER", database);
+  addColumnIfMissing("plans", "access_chat_id", "INTEGER", database);
+  addColumnIfMissing("plans", "access_type", "TEXT NOT NULL DEFAULT 'days'", database);
+  addColumnIfMissing("contents", "category", "TEXT NOT NULL DEFAULT 'Geral'", database);
+  addColumnIfMissing("contents", "access_chat_id", "INTEGER", database);
+  addColumnIfMissing("orders", "offer_id", "TEXT", database);
+  addColumnIfMissing("orders", "auto_renew", "INTEGER NOT NULL DEFAULT 0", database);
+  addColumnIfMissing("orders", "pix_reminder_sent_at", "TEXT", database);
+  addColumnIfMissing("subscriptions", "auto_renew", "INTEGER NOT NULL DEFAULT 0", database);
+  addColumnIfMissing("subscriptions", "renewal_notice_sent_at", "TEXT", database);
+  addColumnIfMissing("subscriptions", "expiration_notice_sent_at", "TEXT", database);
+  addColumnIfMissing("payments", "pix_qr_code", "TEXT", database);
+  addColumnIfMissing("payments", "pix_qr_code_base64", "TEXT", database);
+  addColumnIfMissing("payments", "pix_ticket_url", "TEXT", database);
+  addColumnIfMissing("payments", "telegram_chat_id", "INTEGER", database);
+  addColumnIfMissing("payments", "telegram_message_id", "INTEGER", database);
+  addColumnIfMissing("payments", "telegram_message_type", "TEXT", database);
+  addColumnIfMissing("broadcasts", "audience_type", "TEXT NOT NULL DEFAULT 'all'", database);
+  addColumnIfMissing("broadcasts", "audience_value", "TEXT", database);
+  addColumnIfMissing("broadcasts", "activity_days", "INTEGER NOT NULL DEFAULT 30", database);
+  addColumnIfMissing("broadcasts", "content_kind", "TEXT NOT NULL DEFAULT 'custom'", database);
+  addColumnIfMissing("broadcasts", "source_chat_id", "INTEGER", database);
+  addColumnIfMissing("broadcasts", "source_message_id", "INTEGER", database);
+  const broadcastColumns = database.prepare('PRAGMA table_info("broadcasts")').all() as Row[];
+  if (!broadcastColumns.some((column) => column.name === "interval_minutes")) {
+    database.exec('ALTER TABLE "broadcasts" ADD COLUMN "interval_minutes" INTEGER');
+    database.exec(
+      'UPDATE "broadcasts" SET "interval_minutes" = MAX(1, "interval_hours" * 60) WHERE "interval_minutes" IS NULL',
+    );
+  }
+  addColumnIfMissing("bot_settings", "renewal_notice_days", "INTEGER NOT NULL DEFAULT 3", database);
+  addColumnIfMissing("bot_settings", "expiration_message", "TEXT", database);
+  addColumnIfMissing("bot_settings", "welcome_mode", "TEXT NOT NULL DEFAULT 'custom'", database);
+  addColumnIfMissing("bot_settings", "welcome_source_chat_id", "INTEGER", database);
+  addColumnIfMissing("bot_settings", "welcome_source_message_id", "INTEGER", database);
+  addColumnIfMissing("bot_sessions", "created_at", "TEXT", database);
+  addColumnIfMissing("group_broadcasts", "buttons", "TEXT NOT NULL DEFAULT '[]'", database);
 }
 
 ensureTelegramGroupsSupportsChannels();
@@ -1063,7 +1122,10 @@ function clonePrimarySalesDatabaseSync(destinationPath: string, overwriteInvalid
       const hasSettings = existing
         .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'bot_settings'")
         .get();
-      if (hasSettings) return;
+      if (hasSettings) {
+        ensureSalesDatabaseMigrations(existing);
+        return;
+      }
     } finally {
       existing.close();
     }
@@ -1079,6 +1141,7 @@ function clonePrimarySalesDatabaseSync(destinationPath: string, overwriteInvalid
   primarySqlite.exec(`VACUUM INTO ${sqlString(resolvedDestination)}`);
   const clone = configureDatabase(new Database(resolvedDestination));
   try {
+    ensureSalesDatabaseMigrations(clone);
     clearOperationalSalesData(clone);
   } finally {
     clone.close();
