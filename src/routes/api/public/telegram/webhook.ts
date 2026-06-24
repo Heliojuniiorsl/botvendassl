@@ -86,26 +86,11 @@ function applyPlanTemplate(template: string, plan: Record<string, any>, price: n
   );
 }
 
-function planButtonColorPrefix(plan: Record<string, any>) {
-  const prefixes: Record<string, string> = {
-    default: "💎",
-    red: "🔴",
-    orange: "🟠",
-    yellow: "🟡",
-    green: "🟢",
-    blue: "🔵",
-    purple: "🟣",
-    pink: "🩷",
-  };
-  return prefixes[String(plan.button_color ?? "default")] ?? "💎";
-}
-
 function planListButtonLabel(plan: Record<string, any>) {
   const price = effectivePlanPrice(plan);
   const custom = String(plan.button_label ?? "").trim();
-  const prefix = planButtonColorPrefix(plan);
-  if (custom) return `${prefix} ${applyPlanTemplate(custom, plan, price)}`.trim();
-  return `${prefix} ${plan.name} — ${fmtPrice(price)}`;
+  if (custom) return applyPlanTemplate(custom, plan, price);
+  return `${plan.name} — ${fmtPrice(price)}`;
 }
 
 function planDetailText(plan: Record<string, any>, price: number) {

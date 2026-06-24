@@ -53,7 +53,6 @@ type Plan = {
   name: string;
   description: string | null;
   button_label: string | null;
-  button_color: "default" | "red" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink";
   detail_message: string | null;
   description_mode: "custom" | "telegram_message";
   description_source_chat_id: number | string | null;
@@ -69,21 +68,6 @@ type Plan = {
   is_active: boolean;
   sort_order: number;
 };
-
-const planButtonColors = [
-  { value: "default", label: "Padrao", prefix: "💎" },
-  { value: "red", label: "Vermelho", prefix: "🔴" },
-  { value: "orange", label: "Laranja", prefix: "🟠" },
-  { value: "yellow", label: "Amarelo", prefix: "🟡" },
-  { value: "green", label: "Verde", prefix: "🟢" },
-  { value: "blue", label: "Azul", prefix: "🔵" },
-  { value: "purple", label: "Roxo", prefix: "🟣" },
-  { value: "pink", label: "Rosa", prefix: "🩷" },
-] as const;
-
-function planColorPrefix(value: Plan["button_color"]) {
-  return planButtonColors.find((color) => color.value === value)?.prefix ?? "💎";
-}
 
 const inputDate = (value?: string | null) =>
   value ? new Date(value).toISOString().slice(0, 16) : "";
@@ -158,7 +142,6 @@ function SalesPlans() {
       id: editing?.id,
       name: String(f.get("name")),
       button_label: String(f.get("button_label") || ""),
-      button_color: String(f.get("button_color") || "default"),
       description: planMessage,
       detail_message: planMessage,
       description_mode: descriptionMode,
@@ -220,25 +203,6 @@ function SalesPlans() {
                 <p className="text-xs text-muted-foreground">
                   Se ficar vazio, o bot usa nome e preço. Variáveis: {"{{nome}}"}, {"{{preco}}"} e{" "}
                   {"{{validade}}"}.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="button_color">Cor/destaque do botão no Telegram</Label>
-                <select
-                  id="button_color"
-                  name="button_color"
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  defaultValue={editing?.button_color ?? "default"}
-                >
-                  {planButtonColors.map((color) => (
-                    <option key={color.value} value={color.value}>
-                      {color.prefix} {color.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  O Telegram nao permite trocar a cor de fundo do botão; o destaque aparece como
-                  marcador colorido no texto.
                 </p>
               </div>
               <Card className="space-y-4 border-dashed p-4">
@@ -469,10 +433,7 @@ function SalesPlans() {
                     </Button>
                   </div>
                 </TableCell>
-                <TableCell className="font-medium">
-                  <span className="mr-2">{planColorPrefix(p.button_color ?? "default")}</span>
-                  {p.name}
-                </TableCell>
+                <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell>
                   {p.promo_price !== null ? (
                     <>
