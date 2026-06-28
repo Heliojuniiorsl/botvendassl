@@ -531,7 +531,11 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
               })}
             </div>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+            <div
+              className={`mt-6 grid gap-6 ${
+                step === 4 ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]" : ""
+              }`}
+            >
               <form
                 className="rounded-3xl border bg-white p-5"
                 onSubmit={(event) => {
@@ -827,77 +831,79 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                 </div>
               </form>
 
-              <aside className="rounded-3xl border bg-gradient-to-b from-primary/5 to-white p-5">
-                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                  {validatedTokenIsCurrent ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Bot className="h-4 w-4" />
-                  )}
-                  Resumo em tempo real
-                </div>
-
-                {validatedTokenIsCurrent && validatedBot ? (
-                  <div className="mt-5 flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm">
-                    {validatedBot.photo_data_url ? (
-                      <img
-                        src={validatedBot.photo_data_url}
-                        alt={`Foto de ${validatedBot.display_name}`}
-                        className="h-16 w-16 rounded-2xl object-cover"
-                      />
+              {step === 4 && (
+                <aside className="rounded-3xl border bg-gradient-to-b from-primary/5 to-white p-5">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                    {validatedTokenIsCurrent ? (
+                      <CheckCircle2 className="h-4 w-4" />
                     ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Bot className="h-8 w-8" />
-                      </div>
+                      <Bot className="h-4 w-4" />
                     )}
-                    <div className="min-w-0">
-                      <p className="truncate font-display text-xl font-semibold">
-                        {validatedBot.display_name}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        @{validatedBot.username}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        ID Telegram: {validatedBot.telegram_id}
-                      </p>
-                    </div>
+                    Resumo em tempo real
                   </div>
-                ) : (
-                  <div className="mt-5 rounded-2xl border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
-                    Valide o token para aparecer a previa do Telegram.
-                  </div>
-                )}
 
-                <div className="mt-5 space-y-3 text-sm">
-                  <div className="rounded-2xl bg-white/80 p-4">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <Users className="h-4 w-4 text-primary" />
-                      VIP
+                  {validatedTokenIsCurrent && validatedBot ? (
+                    <div className="mt-5 flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm">
+                      {validatedBot.photo_data_url ? (
+                        <img
+                          src={validatedBot.photo_data_url}
+                          alt={`Foto de ${validatedBot.display_name}`}
+                          className="h-16 w-16 rounded-2xl object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <Bot className="h-8 w-8" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-display text-xl font-semibold">
+                          {validatedBot.display_name}
+                        </p>
+                        <p className="truncate text-sm text-muted-foreground">
+                          @{validatedBot.username}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          ID Telegram: {validatedBot.telegram_id}
+                        </p>
+                      </div>
                     </div>
-                    <p className="mt-1 text-muted-foreground">
-                      {vipVerificationIsCurrent
-                        ? `Verificado: ${vipChatId}`
-                        : vipChatIdIsValid
-                          ? "Aguardando verificacao"
-                          : "Aguardando ID do grupo/canal"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-white/80 p-4">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <MessageSquareText className="h-4 w-4 text-primary" />
-                      Plano
+                  ) : (
+                    <div className="mt-5 rounded-2xl border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
+                      Valide o token para aparecer a previa do Telegram.
                     </div>
-                    <p className="mt-1 text-muted-foreground">
-                      {planName || "Sem nome"} ·{" "}
-                      {planPriceIsValid ? formatCurrency(planPriceNumber) : "preco invalido"}
-                    </p>
+                  )}
+
+                  <div className="mt-5 space-y-3 text-sm">
+                    <div className="rounded-2xl bg-white/80 p-4">
+                      <div className="flex items-center gap-2 font-semibold">
+                        <Users className="h-4 w-4 text-primary" />
+                        VIP
+                      </div>
+                      <p className="mt-1 text-muted-foreground">
+                        {vipVerificationIsCurrent
+                          ? `Verificado: ${vipChatId}`
+                          : vipChatIdIsValid
+                            ? "Aguardando verificacao"
+                            : "Aguardando ID do grupo/canal"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/80 p-4">
+                      <div className="flex items-center gap-2 font-semibold">
+                        <MessageSquareText className="h-4 w-4 text-primary" />
+                        Plano
+                      </div>
+                      <p className="mt-1 text-muted-foreground">
+                        {planName || "Sem nome"} ·{" "}
+                        {planPriceIsValid ? formatCurrency(planPriceNumber) : "preco invalido"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/80 p-4 text-xs text-muted-foreground">
+                      Quando criar, o CriaBot registra um bot proprio, cria o banco separado e grava
+                      a mensagem inicial + primeiro plano nesse banco.
+                    </div>
                   </div>
-                  <div className="rounded-2xl bg-white/80 p-4 text-xs text-muted-foreground">
-                    Quando criar, o CriaBot registra um bot proprio, cria o banco separado e grava a
-                    mensagem inicial + primeiro plano nesse banco.
-                  </div>
-                </div>
-              </aside>
+                </aside>
+              )}
             </div>
           </Card>
         )}
