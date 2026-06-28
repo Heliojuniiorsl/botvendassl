@@ -286,6 +286,9 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   }
 
   const bots = botsQuery.data ?? [];
+  const onlineBotsCount = bots.filter((bot) => bot.status === "online").length;
+  const errorBotsCount = bots.filter((bot) => bot.status === "error").length;
+  const pendingUpdatesCount = bots.reduce((total, bot) => total + bot.pending_updates, 0);
   const role = sessionQuery.data?.admin?.role ?? "creator";
   const isAdmin = role === "admin";
   const isCreateMode = mode === "create";
@@ -461,7 +464,9 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
           : "relative min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_15%_0%,rgba(26,115,232,.14),transparent_28rem),linear-gradient(180deg,#ffffff_0%,#f8fafd_100%)] px-4 py-6 sm:px-5 sm:py-12"
       }
     >
-      <div className="pointer-events-none absolute right-[-12rem] top-[-12rem] h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+      {!embedded && (
+        <div className="pointer-events-none absolute right-[-12rem] top-[-12rem] h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+      )}
       <div
         className={
           embedded
@@ -470,46 +475,72 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
         }
       >
         {!(isCreateMode && embedded) && (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              {!embedded && <BrandMark subtitle="Painel da plataforma" />}
-              <h1
-                className={`font-display text-3xl font-semibold leading-tight sm:text-4xl ${
-                  embedded ? "" : "mt-6 sm:mt-8"
-                }`}
-              >
-                {embedded
-                  ? isCreateMode
-                    ? "Criar bot"
-                    : "Bots"
-                  : "Escolha qual bot deseja gerenciar"}
-              </h1>
-              <p className="mt-2 text-muted-foreground">
-                {isCreateMode
-                  ? "Siga o onboarding guiado para conectar o Telegram e criar o banco separado do novo bot."
-                  : isAdmin
-                    ? "Voce esta na conta admin da plataforma. Gerencie os bots principais e os bots dos criadores."
-                    : "Cadastre o token do seu bot do Telegram para criar um painel e banco proprios."}
-              </p>
+          <section className="rounded-[2rem] border bg-white/95 p-5 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                {!embedded && <BrandMark subtitle="Painel da plataforma" />}
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                  {isCreateMode ? "Novo bot" : "Gerenciamento"}
+                </p>
+                <h1
+                  className={`font-display text-3xl font-semibold leading-tight sm:text-4xl ${
+                    embedded ? "mt-2" : "mt-6 sm:mt-8"
+                  }`}
+                >
+                  {embedded
+                    ? isCreateMode
+                      ? "Criar bot"
+                      : "Bots"
+                    : "Escolha qual bot deseja gerenciar"}
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+                  {isCreateMode
+                    ? "Conecte o Telegram, configure o VIP e publique o primeiro plano."
+                    : isAdmin
+                      ? "Acompanhe os bots conectados, status de webhook e ações principais."
+                      : "Cadastre bots do Telegram com painel e banco próprios para cada projeto."}
+                </p>
+              </div>
+              {(!isCreateMode || !embedded) && (
+                <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+                  {!isCreateMode && (
+                    <Button asChild className="rounded-full px-5">
+                      <Link to="/painel/bots/novo-bot">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Criar bot
+                      </Link>
+                    </Button>
+                  )}
+                  {!embedded && (
+                    <Button variant="ghost" className="rounded-full" onClick={signOut}>
+                      <LogOut className="mr-2 h-4 w-4" /> Sair
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
-            {(!isCreateMode || !embedded) && (
-              <div className="flex flex-wrap gap-2 self-start sm:self-auto">
-                {!isCreateMode && (
-                  <Button asChild>
-                    <Link to="/painel/bots/novo-bot">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Criar bot
-                    </Link>
-                  </Button>
-                )}
-                {!embedded && (
-                  <Button variant="ghost" onClick={signOut}>
-                    <LogOut className="mr-2 h-4 w-4" /> Sair
-                  </Button>
-                )}
+
+            {!isCreateMode && (
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border bg-muted/20 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="mt-1 font-display text-2xl font-semibold">{bots.length}</p>
+                </div>
+                <div className="rounded-2xl border bg-muted/20 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Online</p>
+                  <p className="mt-1 font-display text-2xl font-semibold text-emerald-700">
+                    {onlineBotsCount}
+                  </p>
+                </div>
+                <div className="rounded-2xl border bg-muted/20 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Pendências</p>
+                  <p className="mt-1 font-display text-2xl font-semibold">
+                    {errorBotsCount + pendingUpdatesCount}
+                  </p>
+                </div>
               </div>
             )}
-          </div>
+          </section>
         )}
 
         {isCreateMode && (
@@ -986,126 +1017,149 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
         )}
 
         {!isCreateMode && (
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <section className="mt-6">
             {botsQuery.isLoading && (
-              <Card className="col-span-full p-8 text-center text-muted-foreground">
-                Consultando os bots no Telegram...
+              <Card className="p-8 text-center text-sm text-muted-foreground">
+                <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin text-primary" />
+                Consultando bots conectados...
               </Card>
             )}
             {botsQuery.isError && (
-              <Card className="col-span-full p-8 text-center">
+              <Card className="p-8 text-center">
                 <p className="font-semibold text-destructive">
                   Não consegui consultar os bots agora.
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
                   {botsQuery.error instanceof Error
                     ? botsQuery.error.message
                     : "Falha ao carregar a lista de bots."}
                 </p>
-                <Button className="mt-5" onClick={() => botsQuery.refetch()}>
+                <Button className="mt-5 rounded-full" onClick={() => botsQuery.refetch()}>
                   Tentar novamente
                 </Button>
               </Card>
             )}
-            {bots.map((bot) => {
-              const Icon = bot.kind === "sales" ? Bot : Images;
-              const busy = action.isPending && action.variables?.key === bot.key;
-              return (
-                <Card
-                  key={bot.key}
-                  className="flex h-full flex-col bg-white/95 p-5 shadow-sm sm:p-7"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      {bot.photo_data_url ? (
-                        <img
-                          src={bot.photo_data_url}
-                          alt={`Foto de ${bot.display_name}`}
-                          className="h-16 w-16 rounded-2xl object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                          <Icon className="h-8 w-8" />
+            {!botsQuery.isLoading && !botsQuery.isError && bots.length > 0 && (
+              <Card className="overflow-hidden border bg-white/95 shadow-sm">
+                <div className="hidden">
+                  <span>Bot</span>
+                  <span>Tipo</span>
+                  <span>Status</span>
+                  <span className="text-right">Acoes</span>
+                </div>
+
+                <div className="divide-y">
+                  {bots.map((bot) => {
+                    const Icon = bot.kind === "sales" ? Bot : Images;
+                    const busy = action.isPending && action.variables?.key === bot.key;
+                    return (
+                      <div key={bot.key} className="px-4 py-4 transition hover:bg-muted/20 lg:px-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            {bot.photo_data_url ? (
+                              <img
+                                src={bot.photo_data_url}
+                                alt={`Foto de ${bot.display_name}`}
+                                className="h-14 w-14 rounded-2xl object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <Icon className="h-7 w-7" />
+                              </div>
+                            )}
+                          </div>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[bot.status]}`}
+                          >
+                            {statusLabels[bot.status]}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[bot.status]}`}
-                    >
-                      {statusLabels[bot.status]}
-                    </span>
-                  </div>
 
-                  <h2 className="mt-5 font-display text-2xl font-semibold">{bot.display_name}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {bot.username ? `@${bot.username}` : bot.status_message}
-                  </p>
-                  {bot.username && bot.status_message && (
-                    <p
-                      className={`mt-2 text-xs ${
-                        bot.status === "error" ? "text-destructive" : "text-muted-foreground"
-                      }`}
-                    >
-                      {bot.status_message}
-                    </p>
-                  )}
-                  {bot.pending_updates > 0 && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {bot.pending_updates} atualização(ões) aguardando processamento
-                    </p>
-                  )}
+                        <h2 className="mt-4 font-display text-lg font-semibold">
+                          {bot.display_name}
+                        </h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {bot.username ? `@${bot.username}` : bot.status_message}
+                        </p>
+                        {bot.username && bot.status_message && (
+                          <p
+                            className={`mt-2 text-xs ${
+                              bot.status === "error" ? "text-destructive" : "text-muted-foreground"
+                            }`}
+                          >
+                            {bot.status_message}
+                          </p>
+                        )}
+                        {bot.pending_updates > 0 && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {bot.pending_updates} atualização(ões) aguardando processamento
+                          </p>
+                        )}
 
-                  <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <Button
-                      variant="outline"
-                      disabled={!bot.configured || bot.status === "online" || busy}
-                      onClick={() => action.mutate({ key: bot.key, action: "start" })}
-                    >
-                      <Play className="mr-1 h-4 w-4" /> Iniciar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={!bot.configured || bot.status === "stopped" || busy}
-                      onClick={() => action.mutate({ key: bot.key, action: "stop" })}
-                    >
-                      <Square className="mr-1 h-4 w-4" /> Parar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={!bot.configured || busy}
-                      onClick={() => action.mutate({ key: bot.key, action: "restart" })}
-                    >
-                      <RotateCw className={`mr-1 h-4 w-4 ${busy ? "animate-spin" : ""}`} />{" "}
-                      Reiniciar
-                    </Button>
-                  </div>
+                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          <Button
+                            variant="outline"
+                            className="h-9 rounded-full text-xs"
+                            disabled={!bot.configured || bot.status === "online" || busy}
+                            onClick={() => action.mutate({ key: bot.key, action: "start" })}
+                          >
+                            <Play className="mr-1 h-4 w-4" /> Iniciar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="h-9 rounded-full text-xs"
+                            disabled={!bot.configured || bot.status === "stopped" || busy}
+                            onClick={() => action.mutate({ key: bot.key, action: "stop" })}
+                          >
+                            <Square className="mr-1 h-4 w-4" /> Parar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="h-9 rounded-full text-xs"
+                            disabled={!bot.configured || busy}
+                            onClick={() => action.mutate({ key: bot.key, action: "restart" })}
+                          >
+                            <RotateCw className={`mr-1 h-4 w-4 ${busy ? "animate-spin" : ""}`} />{" "}
+                            Reiniciar
+                          </Button>
+                        </div>
 
-                  {bot.username ? (
-                    <Button asChild className="mt-5 w-full">
-                      <Link to="/$bot/dashboard" params={{ bot: bot.username }}>
-                        Abrir painel
-                      </Link>
-                    </Button>
-                  ) : (
-                    <Button className="mt-5 w-full" disabled>
-                      Configure o token para abrir
-                    </Button>
-                  )}
-                </Card>
-              );
-            })}
+                        {bot.username ? (
+                          <Button asChild className="mt-4 w-full rounded-full">
+                            <Link to="/$bot/dashboard" params={{ bot: bot.username }}>
+                              Abrir painel
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button className="mt-4 w-full rounded-full" disabled>
+                            Configure o token para abrir
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
             {!botsQuery.isLoading && !botsQuery.isError && bots.length === 0 && (
-              <Card className="col-span-full p-8 text-center">
+              <Card className="p-10 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Bot className="h-7 w-7" />
                 </div>
                 <h2 className="mt-4 font-display text-2xl font-semibold">Nenhum bot cadastrado</h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                  Clique em Criar bot para cadastrar o primeiro token do BotFather dessa conta.
+                  Crie o primeiro bot conectando um token do BotFather. O painel e o banco serao
+                  gerados separadamente.
                 </p>
+                <Button asChild className="mt-5 rounded-full px-5">
+                  <Link to="/painel/bots/novo-bot">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar bot
+                  </Link>
+                </Button>
               </Card>
             )}
-          </div>
+          </section>
         )}
       </div>
     </main>
