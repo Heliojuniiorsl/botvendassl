@@ -255,6 +255,16 @@ if (!(Wait-ForHttp $publicUrl 60)) {
 if (!$SkipWebhooks) {
   Write-Step "Reconectando webhooks dos bots"
   $envValues = Read-EnvFile $EnvPath
+  $criaBotToken = $envValues["CRIABOT_TOKEN"]
+  if ([string]::IsNullOrWhiteSpace($criaBotToken)) {
+    $criaBotToken = $envValues["SITE_BOT_TOKEN"]
+  }
+  if ([string]::IsNullOrWhiteSpace($criaBotToken)) {
+    $criaBotToken = $envValues["criabot_token"]
+  }
+  $siteCommands = @(
+    @{ command = "start"; description = "Vincular sua conta ao CriaBot" }
+  )
   $salesCommands = @(
     @{ command = "start"; description = "Abrir planos e ofertas" },
     @{ command = "planos"; description = "Ver planos disponiveis" },
@@ -269,6 +279,12 @@ if (!$SkipWebhooks) {
     @{ command = "premium"; description = "Ver planos premium" },
     @{ command = "idioma"; description = "Trocar idioma" }
   )
+  Set-TelegramWebhook "CriaBot oficial" `
+    $criaBotToken `
+    "criabot-site-webhook" `
+    "$publicUrl/api/public/telegram/site-webhook" `
+    @("message")
+  Set-TelegramCommandsMenu "CriaBot oficial" $criaBotToken $siteCommands
   Set-TelegramWebhook "Bot de vendas" `
     $envValues["TELEGRAM_BOT_TOKEN"] `
     "telegram-webhook" `

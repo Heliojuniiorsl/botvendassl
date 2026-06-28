@@ -20,6 +20,7 @@ import {
   getActiveSalesBotToken,
   runWithSalesBotRuntime,
 } from "@/lib/sales-bot-runtime.server";
+import { getCriaBotLinkStatus as readCriaBotLinkStatus } from "@/lib/site-bot.server";
 import {
   deleteImageBotMediaMany,
   deleteImageBotMedia,
@@ -407,6 +408,11 @@ export const createManagedSalesBot = createServerFn({ method: "POST" })
       },
     };
   });
+
+export const getCriaBotLinkStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const session = requireAccountSession();
+  return readCriaBotLinkStatus(session.id);
+});
 
 /* ----------------------------- Environment ------------------------------- */
 

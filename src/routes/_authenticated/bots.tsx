@@ -8,6 +8,7 @@ import {
   Bot,
   CheckCircle2,
   Crown,
+  ExternalLink,
   Images,
   Loader2,
   LogOut,
@@ -17,6 +18,7 @@ import {
   RotateCw,
   ShieldCheck,
   Square,
+  UserRound,
   Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -30,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createManagedSalesBot,
+  getCriaBotLinkStatus,
   getManagedBots,
   runManagedBotAction,
   validateManagedSalesBotToken,
@@ -75,6 +78,34 @@ type VipVerificationResult = {
   chat_id: number;
   bot_status: "creator" | "administrator" | "member" | "restricted" | "left" | "kicked";
   member_count: number | null;
+};
+
+type CriaBotLinkedUser = {
+  telegram_user_id: number;
+  telegram_chat_id: number;
+  is_bot: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  username: string | null;
+  language_code: string | null;
+  is_premium: boolean;
+  photo_data_url: string | null;
+  linked_at: string;
+  updated_at: string;
+};
+
+type CriaBotLinkStatus = {
+  configured: boolean;
+  error: string | null;
+  bot: {
+    id: string;
+    username: string;
+    display_name: string;
+    photo_data_url: string | null;
+  } | null;
+  link_url: string | null;
+  expires_at: string | null;
+  linked_user: CriaBotLinkedUser | null;
 };
 
 type PlanAccessType = "days" | "lifetime";
@@ -128,6 +159,13 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
+function formatCriaBotUserName(user: CriaBotLinkedUser) {
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+  if (fullName) return fullName;
+  if (user.username) return `@${user.username}`;
+  return `ID ${user.telegram_user_id}`;
+}
+
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
   let timeout: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -171,6 +209,7 @@ type BotsPanelContentProps = {
 export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelContentProps) {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const isCreateMode = mode === "create";
   const logoutFn = useServerFn(logoutAdminAccount);
   const sessionFn = useServerFn(getAdminSession);
   const listFn = useServerFn(getManagedBots);
@@ -178,6 +217,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   const createBotFn = useServerFn(createManagedSalesBot);
   const validateTokenFn = useServerFn(validateManagedSalesBotToken);
   const verifyVipChatFn = useServerFn(verifyManagedSalesBotVipChat);
+  const criaBotLinkStatusFn = useServerFn(getCriaBotLinkStatus);
   const lastAutoValidatedTokenRef = useRef("");
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [token, setToken] = useState("");
@@ -212,6 +252,14 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
         "A consulta ao Telegram demorou demais. Tente novamente em alguns segundos.",
       ),
     refetchInterval: 15_000,
+    retry: 1,
+  });
+
+  const criaBotLinkQuery = useQuery({
+    queryKey: ["criabot-link-status"],
+    queryFn: () => criaBotLinkStatusFn() as Promise<CriaBotLinkStatus>,
+    enabled: isCreateMode && step === 1,
+    refetchInterval: isCreateMode && step === 1 ? 4_000 : false,
     retry: 1,
   });
 
@@ -291,7 +339,8 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   const pendingUpdatesCount = bots.reduce((total, bot) => total + bot.pending_updates, 0);
   const role = sessionQuery.data?.admin?.role ?? "creator";
   const isAdmin = role === "admin";
-  const isCreateMode = mode === "create";
+  const criaBotLinkStatus = criaBotLinkQuery.data;
+  const linkedCriaBotUser = criaBotLinkStatus?.linked_user ?? null;
   const cleanToken = token.trim();
   const hasToken = cleanToken.length > 0;
   const tokenHasValidFormat = !hasToken || telegramBotTokenPattern.test(cleanToken);
@@ -632,6 +681,135 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         Cole o token do BotFather. Antes de salvar, vamos consultar o Telegram.
                       </p>
                     </div>
+
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <UserRound className="h-4 w-4" />
+                            Vincular usuario ao CriaBot
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Abra o bot oficial, toque em /start e o site mostra aqui os dados do
+                            Telegram vinculados a esta conta.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {criaBotLinkStatus?.link_url && (
+                            <Button asChild className="rounded-full">
+                              <a href={criaBotLinkStatus.link_url} target="_blank" rel="noreferrer">
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                Abrir bot oficial
+                              </a>
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => void criaBotLinkQuery.refetch()}
+                            disabled={criaBotLinkQuery.isFetching}
+                          >
+                            {criaBotLinkQuery.isFetching ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCw className="mr-2 h-4 w-4" />
+                            )}
+                            Atualizar
+                          </Button>
+                        </div>
+                      </div>
+
+                      {criaBotLinkQuery.isLoading && (
+                        <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-muted-foreground">
+                          <Loader2 className="mr-2 inline h-4 w-4 animate-spin text-primary" />
+                          Consultando bot oficial...
+                        </div>
+                      )}
+
+                      {criaBotLinkStatus?.error && (
+                        <div className="mt-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+                          {criaBotLinkStatus.error}
+                        </div>
+                      )}
+
+                      {criaBotLinkStatus?.bot && (
+                        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/80 p-3 text-sm">
+                          {criaBotLinkStatus.bot.photo_data_url ? (
+                            <img
+                              src={criaBotLinkStatus.bot.photo_data_url}
+                              alt={`Foto de ${criaBotLinkStatus.bot.display_name}`}
+                              className="h-12 w-12 rounded-2xl object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                              <Bot className="h-6 w-6" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">
+                              {criaBotLinkStatus.bot.display_name}
+                            </p>
+                            <p className="truncate text-muted-foreground">
+                              @{criaBotLinkStatus.bot.username}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {linkedCriaBotUser ? (
+                        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                          <div className="flex items-start gap-4">
+                            {linkedCriaBotUser.photo_data_url ? (
+                              <img
+                                src={linkedCriaBotUser.photo_data_url}
+                                alt={`Foto de ${formatCriaBotUserName(linkedCriaBotUser)}`}
+                                className="h-16 w-16 rounded-2xl object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                                <UserRound className="h-8 w-8" />
+                              </div>
+                            )}
+                            <div className="min-w-0 text-sm">
+                              <div className="flex items-center gap-2 font-semibold text-emerald-700">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Telegram vinculado
+                              </div>
+                              <p className="mt-1 truncate font-display text-lg font-semibold">
+                                {formatCriaBotUserName(linkedCriaBotUser)}
+                              </p>
+                              <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                                <span>ID: {linkedCriaBotUser.telegram_user_id}</span>
+                                <span>Chat: {linkedCriaBotUser.telegram_chat_id}</span>
+                                <span>
+                                  Username:{" "}
+                                  {linkedCriaBotUser.username
+                                    ? `@${linkedCriaBotUser.username}`
+                                    : "nao informado"}
+                                </span>
+                                <span>
+                                  Idioma: {linkedCriaBotUser.language_code || "nao informado"}
+                                </span>
+                                <span>
+                                  Premium Telegram: {linkedCriaBotUser.is_premium ? "sim" : "nao"}
+                                </span>
+                                <span>Bot: {linkedCriaBotUser.is_bot ? "sim" : "nao"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        criaBotLinkStatus?.configured &&
+                        !criaBotLinkStatus.error && (
+                          <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-muted-foreground">
+                            Depois que o usuario abrir o bot oficial e der /start, o preview aparece
+                            aqui automaticamente.
+                          </p>
+                        )
+                      )}
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="telegram_token">Token do bot</Label>
                       <Input

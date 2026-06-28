@@ -19,6 +19,7 @@ const salesWebhookUpdates = [
   "chat_join_request",
 ];
 const imageWebhookUpdates = ["message", "callback_query", "my_chat_member"];
+const siteWebhookUpdates = ["message"];
 const salesBotCommands = [
   { command: "start", description: "Abrir planos e ofertas" },
   { command: "planos", description: "Ver planos disponiveis" },
@@ -33,6 +34,7 @@ const imageBotCommands = [
   { command: "premium", description: "Ver planos premium" },
   { command: "idioma", description: "Trocar idioma" },
 ];
+const siteBotCommands = [{ command: "start", description: "Vincular sua conta ao CriaBot" }];
 
 if (!handler || typeof handler.fetch !== "function") {
   throw new Error("O bundle TanStack não exporta um handler fetch válido");
@@ -165,6 +167,19 @@ async function setImageWebhook(label, token, publicUrl) {
   console.log(`[boot] Webhook de ${label} sincronizado.`);
 }
 
+async function setSiteWebhook(label, token, publicUrl) {
+  if (!token || !publicUrl.startsWith("https://")) return;
+  const secret = createHash("sha256").update(`criabot-site-webhook:${token}`).digest("base64url");
+  await telegramPost(token, "setWebhook", label, {
+    url: `${publicUrl}/api/public/telegram/site-webhook`,
+    secret_token: secret,
+    allowed_updates: siteWebhookUpdates,
+    drop_pending_updates: false,
+  });
+  await setTelegramCommandsMenu(token, siteBotCommands, label);
+  console.log(`[boot] Webhook de ${label} sincronizado.`);
+}
+
 async function telegramPost(token, method, label, body) {
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
@@ -176,6 +191,15 @@ async function telegramPost(token, method, label, body) {
     const detail = payload?.description ?? `HTTP ${response.status}`;
     throw new Error(`Telegram recusou ${method} de ${label}: ${detail}`);
   }
+}
+
+function getCriaBotToken() {
+  return (
+    process.env.CRIABOT_TOKEN?.trim() ||
+    process.env.SITE_BOT_TOKEN?.trim() ||
+    process.env.criabot_token?.trim() ||
+    ""
+  );
 }
 
 async function setTelegramCommandsMenu(token, commands, label) {
@@ -303,6 +327,7 @@ async function syncSalesWebhooksOnBoot() {
   if (!publicUrl.startsWith("https://")) return;
 
   const tasks = [
+    setSiteWebhook("CriaBot oficial", getCriaBotToken(), publicUrl),
     setSalesWebhook("Bruna", process.env.TELEGRAM_BOT_TOKEN, publicUrl),
     setImageWebhook("UpMidias", process.env.IMAGE_BOT_TOKEN, publicUrl),
   ];

@@ -72,6 +72,42 @@ sqlite.exec(`
   );
   CREATE INDEX IF NOT EXISTS admin_sessions_expires_idx ON admin_sessions(expires_at);
 
+  CREATE TABLE IF NOT EXISTS site_bot_link_tokens (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES admin_accounts(id) ON DELETE CASCADE,
+    code TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS site_bot_link_tokens_account_idx
+    ON site_bot_link_tokens(account_id, expires_at, used_at);
+
+  CREATE TABLE IF NOT EXISTS site_bot_user_links (
+    account_id TEXT PRIMARY KEY REFERENCES admin_accounts(id) ON DELETE CASCADE,
+    telegram_user_id INTEGER NOT NULL,
+    telegram_chat_id INTEGER NOT NULL,
+    is_bot INTEGER NOT NULL DEFAULT 0,
+    first_name TEXT,
+    last_name TEXT,
+    username TEXT,
+    language_code TEXT,
+    is_premium INTEGER NOT NULL DEFAULT 0,
+    photo_data_url TEXT,
+    raw_profile_json TEXT,
+    linked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  DROP INDEX IF EXISTS site_bot_user_links_telegram_idx;
+  CREATE INDEX IF NOT EXISTS site_bot_user_links_telegram_idx
+    ON site_bot_user_links(telegram_user_id);
+
+  CREATE TABLE IF NOT EXISTS site_bot_updates (
+    update_id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     telegram_id INTEGER NOT NULL UNIQUE,

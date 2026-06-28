@@ -33,6 +33,7 @@ import { Route as AuthenticatedBotConfiguracoesRouteImport } from './routes/_aut
 import { Route as AuthenticatedBotClientesRouteImport } from './routes/_authenticated/$bot/clientes'
 import { Route as AuthenticatedBotAdministracaoRouteImport } from './routes/_authenticated/$bot/administracao'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicTelegramSiteWebhookRouteImport } from './routes/api/public/telegram/site-webhook'
 import { Route as ApiPublicTelegramImageWebhookRouteImport } from './routes/api/public/telegram/image-webhook'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media/$'
@@ -172,6 +173,12 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTelegramSiteWebhookRoute =
+  ApiPublicTelegramSiteWebhookRouteImport.update({
+    id: '/api/public/telegram/site-webhook',
+    path: '/api/public/telegram/site-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTelegramImageWebhookRoute =
   ApiPublicTelegramImageWebhookRouteImport.update({
     id: '/api/public/telegram/image-webhook',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/telegram/image-webhook': typeof ApiPublicTelegramImageWebhookRoute
+  '/api/public/telegram/site-webhook': typeof ApiPublicTelegramSiteWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -266,6 +274,7 @@ export interface FileRoutesByTo {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/telegram/image-webhook': typeof ApiPublicTelegramImageWebhookRoute
+  '/api/public/telegram/site-webhook': typeof ApiPublicTelegramSiteWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -299,6 +308,7 @@ export interface FileRoutesById {
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/telegram/image-webhook': typeof ApiPublicTelegramImageWebhookRoute
+  '/api/public/telegram/site-webhook': typeof ApiPublicTelegramSiteWebhookRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/payments/webhook'
     | '/api/public/telegram/image-webhook'
+    | '/api/public/telegram/site-webhook'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/payments/webhook'
     | '/api/public/telegram/image-webhook'
+    | '/api/public/telegram/site-webhook'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -395,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/public/media/$'
     | '/api/public/payments/webhook'
     | '/api/public/telegram/image-webhook'
+    | '/api/public/telegram/site-webhook'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -408,6 +421,7 @@ export interface RootRouteChildren {
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicTelegramImageWebhookRoute: typeof ApiPublicTelegramImageWebhookRoute
+  ApiPublicTelegramSiteWebhookRoute: typeof ApiPublicTelegramSiteWebhookRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -581,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/site-webhook': {
+      id: '/api/public/telegram/site-webhook'
+      path: '/api/public/telegram/site-webhook'
+      fullPath: '/api/public/telegram/site-webhook'
+      preLoaderRoute: typeof ApiPublicTelegramSiteWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/image-webhook': {
       id: '/api/public/telegram/image-webhook'
       path: '/api/public/telegram/image-webhook'
@@ -720,6 +741,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicTelegramImageWebhookRoute: ApiPublicTelegramImageWebhookRoute,
+  ApiPublicTelegramSiteWebhookRoute: ApiPublicTelegramSiteWebhookRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
