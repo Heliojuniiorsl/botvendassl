@@ -19,7 +19,7 @@ import {
   Square,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/BrandMark";
@@ -178,6 +178,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   const createBotFn = useServerFn(createManagedSalesBot);
   const validateTokenFn = useServerFn(validateManagedSalesBotToken);
   const verifyVipChatFn = useServerFn(verifyManagedSalesBotVipChat);
+  const lastAutoValidatedTokenRef = useRef("");
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [token, setToken] = useState("");
   const [validatedBot, setValidatedBot] = useState<ValidatedTelegramBot | null>(null);
@@ -318,6 +319,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
     setValidationError(null);
     setVipVerification(null);
     setVipVerificationError(null);
+    lastAutoValidatedTokenRef.current = "";
   }
 
   function handleValidateToken() {
@@ -408,6 +410,49 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
     setStep((current) => Math.max(1, current - 1) as 1 | 2 | 3 | 4);
   }
 
+  type WizardStepId = (typeof wizardSteps)[number]["id"];
+
+  function getStepBlockMessage(targetStep: WizardStepId) {
+    if (targetStep >= 2 && !validatedTokenIsCurrent) {
+      return "Valide o token do Telegram antes de continuar.";
+    }
+    if (targetStep >= 3 && (!vipChatIdIsValid || !vipVerificationIsCurrent)) {
+      return "Verifique o grupo ou canal VIP antes de continuar.";
+    }
+    if (targetStep >= 4 && !planStepIsValid) {
+      return "Complete a primeira mensagem e o plano antes de revisar.";
+    }
+    return null;
+  }
+
+  function handleStepSelect(targetStep: WizardStepId) {
+    const blockMessage = getStepBlockMessage(targetStep);
+    if (blockMessage) {
+      toast.error(blockMessage);
+      return;
+    }
+    setStep(targetStep);
+  }
+
+  useEffect(() => {
+    if (!isCreateMode || step !== 1) {
+      return;
+    }
+    if (!cleanToken || !telegramBotTokenPattern.test(cleanToken) || validatedTokenIsCurrent) {
+      return;
+    }
+    if (validateToken.isPending || lastAutoValidatedTokenRef.current === cleanToken) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      lastAutoValidatedTokenRef.current = cleanToken;
+      validateToken.mutate({ token: cleanToken });
+    }, 600);
+
+    return () => clearTimeout(timeout);
+  }, [cleanToken, isCreateMode, step, validatedTokenIsCurrent, validateToken]);
+
   return (
     <main
       className={
@@ -424,46 +469,48 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
             : "relative mx-auto flex w-full max-w-6xl flex-col justify-start md:min-h-[calc(100vh-6rem)] md:justify-center"
         }
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            {!embedded && <BrandMark subtitle="Painel da plataforma" />}
-            <h1
-              className={`font-display text-3xl font-semibold leading-tight sm:text-4xl ${
-                embedded ? "" : "mt-6 sm:mt-8"
-              }`}
-            >
-              {embedded
-                ? isCreateMode
-                  ? "Criar bot"
-                  : "Bots"
-                : "Escolha qual bot deseja gerenciar"}
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              {isCreateMode
-                ? "Siga o onboarding guiado para conectar o Telegram e criar o banco separado do novo bot."
-                : isAdmin
-                  ? "Voce esta na conta admin da plataforma. Gerencie os bots principais e os bots dos criadores."
-                  : "Cadastre o token do seu bot do Telegram para criar um painel e banco proprios."}
-            </p>
-          </div>
-          {(!isCreateMode || !embedded) && (
-            <div className="flex flex-wrap gap-2 self-start sm:self-auto">
-              {!isCreateMode && (
-                <Button asChild>
-                  <Link to="/painel/bots/novo-bot">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar bot
-                  </Link>
-                </Button>
-              )}
-              {!embedded && (
-                <Button variant="ghost" onClick={signOut}>
-                  <LogOut className="mr-2 h-4 w-4" /> Sair
-                </Button>
-              )}
+        {!(isCreateMode && embedded) && (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              {!embedded && <BrandMark subtitle="Painel da plataforma" />}
+              <h1
+                className={`font-display text-3xl font-semibold leading-tight sm:text-4xl ${
+                  embedded ? "" : "mt-6 sm:mt-8"
+                }`}
+              >
+                {embedded
+                  ? isCreateMode
+                    ? "Criar bot"
+                    : "Bots"
+                  : "Escolha qual bot deseja gerenciar"}
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                {isCreateMode
+                  ? "Siga o onboarding guiado para conectar o Telegram e criar o banco separado do novo bot."
+                  : isAdmin
+                    ? "Voce esta na conta admin da plataforma. Gerencie os bots principais e os bots dos criadores."
+                    : "Cadastre o token do seu bot do Telegram para criar um painel e banco proprios."}
+              </p>
             </div>
-          )}
-        </div>
+            {(!isCreateMode || !embedded) && (
+              <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+                {!isCreateMode && (
+                  <Button asChild>
+                    <Link to="/painel/bots/novo-bot">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar bot
+                    </Link>
+                  </Button>
+                )}
+                {!embedded && (
+                  <Button variant="ghost" onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" /> Sair
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {isCreateMode && (
           <Card
@@ -492,18 +539,20 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                 const Icon = item.icon;
                 const active = item.id === step;
                 const done = item.id < step;
+                const blocked = Boolean(getStepBlockMessage(item.id));
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setStep(item.id)}
+                    onClick={() => handleStepSelect(item.id)}
+                    aria-disabled={blocked}
                     className={`rounded-2xl border p-3 text-left transition ${
                       active
                         ? "border-primary bg-primary text-primary-foreground shadow-sm"
                         : done
                           ? "border-primary/30 bg-primary/5"
                           : "bg-white"
-                    }`}
+                    } ${blocked ? "cursor-not-allowed opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <span
@@ -582,6 +631,39 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         </p>
                       )}
                     </div>
+                    {validateToken.isPending && hasToken && tokenHasValidFormat && (
+                      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+                        <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                        Validando token automaticamente...
+                      </div>
+                    )}
+                    {validatedTokenIsCurrent && validatedBot && (
+                      <div className="flex items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        {validatedBot.photo_data_url ? (
+                          <img
+                            src={validatedBot.photo_data_url}
+                            alt={`Foto de ${validatedBot.display_name}`}
+                            className="h-16 w-16 rounded-2xl object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                            <Bot className="h-8 w-8" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Token validado
+                          </div>
+                          <p className="mt-1 truncate font-display text-xl font-semibold">
+                            {validatedBot.display_name}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            @{validatedBot.username}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
