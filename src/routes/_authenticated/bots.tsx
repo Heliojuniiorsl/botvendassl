@@ -600,16 +600,9 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  Onboarding guiado
-                </div>
                 <h2 className="mt-3 font-display text-2xl font-semibold">
                   Crie um bot pronto para vender
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Configure o Telegram, o grupo VIP e o primeiro plano. O CriaBot cria o bot no
-                  sistema atual com banco separado.
-                </p>
               </div>
               <div className="text-sm text-muted-foreground">Passo {step} de 4</div>
             </div>
@@ -677,9 +670,6 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       <h3 className="font-display text-xl font-semibold">
                         Passo 1: conectar Telegram
                       </h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Cole o token do BotFather. Antes de salvar, vamos consultar o Telegram.
-                      </p>
                     </div>
 
                     <div className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -709,9 +699,6 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                               : undefined
                           }
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Formato esperado: numeros, dois pontos e a chave secreta do BotFather.
-                        </p>
                         {!tokenHasValidFormat && (
                           <p className="flex items-center gap-1 text-xs font-medium text-destructive">
                             <AlertCircle className="h-3.5 w-3.5" />
@@ -873,7 +860,6 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                               </p>
                               <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
                                 <span>ID: {linkedCriaBotUser.telegram_user_id}</span>
-                                <span>Chat: {linkedCriaBotUser.telegram_chat_id}</span>
                                 <span>
                                   Username:{" "}
                                   {linkedCriaBotUser.username
@@ -886,7 +872,6 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                                 <span>
                                   Premium Telegram: {linkedCriaBotUser.is_premium ? "sim" : "nao"}
                                 </span>
-                                <span>Bot: {linkedCriaBotUser.is_bot ? "sim" : "nao"}</span>
                               </div>
                             </div>
                           </div>
