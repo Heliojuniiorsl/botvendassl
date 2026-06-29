@@ -4,6 +4,7 @@ import { deleteCookie, getCookie, getRequest, setCookie } from "@tanstack/react-
 import { sqlite } from "./database.server";
 
 const cookieName = "criabot_session";
+const publicCookieName = "criabot_session_public";
 const legacyCookieName = "botvendassl_session";
 const sessionDurationSeconds = 30 * 24 * 60 * 60;
 
@@ -34,12 +35,12 @@ function verifyPassword(password: string, encoded: string) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-function cookieOptions() {
+function cookieOptions(httpOnly = true) {
   const request = getRequest();
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const secure = forwardedProto === "https" || new URL(request.url).protocol === "https:";
   return {
-    httpOnly: true,
+    httpOnly,
     secure,
     sameSite: "lax" as const,
     path: "/",
@@ -55,10 +56,12 @@ function createSession(adminId: string) {
     .prepare("INSERT INTO admin_sessions (token_hash, admin_id, expires_at) VALUES (?, ?, ?)")
     .run(hashSessionToken(token), adminId, expiresAt);
   setCookie(cookieName, token, cookieOptions());
+  setCookie(publicCookieName, token, cookieOptions(false));
+  return token;
 }
 
 function getSessionCookie() {
-  return getCookie(cookieName) ?? getCookie(legacyCookieName);
+  return getCookie(cookieName) ?? getCookie(publicCookieName) ?? getCookie(legacyCookieName);
 }
 
 export function hasAdminAccount() {
@@ -82,8 +85,14 @@ export function createAccount(email: string, password: string) {
   sqlite
     .prepare("INSERT INTO admin_accounts (id, email, password_hash, role) VALUES (?, ?, ?, ?)")
     .run(id, normalizedEmail, hashPassword(password), role);
-  createSession(id);
-  return { id, email: normalizedEmail, role };
+  const session_token = createSession(id);
+  return {
+    id,
+    email: normalizedEmail,
+    role,
+    session_token,
+    session_expires_in: sessionDurationSeconds,
+  };
 }
 
 export function loginAdmin(email: string, password: string) {
@@ -95,8 +104,14 @@ export function loginAdmin(email: string, password: string) {
   if (!account || !verifyPassword(password, account.password_hash)) {
     throw new Error("E-mail ou senha incorretos");
   }
-  createSession(account.id);
-  return { id: account.id, email: account.email, role: account.role ?? "admin" };
+  const session_token = createSession(account.id);
+  return {
+    id: account.id,
+    email: account.email,
+    role: account.role ?? "admin",
+    session_token,
+    session_expires_in: sessionDurationSeconds,
+  };
 }
 
 export function logoutAdmin() {
@@ -104,6 +119,7 @@ export function logoutAdmin() {
   if (token)
     sqlite.prepare("DELETE FROM admin_sessions WHERE token_hash = ?").run(hashSessionToken(token));
   deleteCookie(cookieName, { ...cookieOptions(), maxAge: 0 });
+  deleteCookie(publicCookieName, { ...cookieOptions(false), maxAge: 0 });
   deleteCookie(legacyCookieName, { ...cookieOptions(), maxAge: 0 });
 }
 

@@ -87,6 +87,15 @@ function getPasswordStrength(password: string): PasswordStrength | null {
   };
 }
 
+function persistBrowserSession(admin: { session_token?: string; session_expires_in?: number }) {
+  if (!admin.session_token || typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  const maxAge = Math.max(60, admin.session_expires_in ?? 30 * 24 * 60 * 60);
+  document.cookie = `criabot_session_public=${encodeURIComponent(
+    admin.session_token,
+  )}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
+}
+
 function LoginPage() {
   const navigate = useNavigate();
   const statusFn = useServerFn(getAuthStatus);
@@ -146,14 +155,16 @@ function LoginPage() {
     setLoading(true);
     try {
       if (createAccount) {
-        await createFn({
+        const result = await createFn({
           data: {
             email,
             password,
           },
         });
+        persistBrowserSession(result.admin);
       } else {
-        await loginFn({ data: { email, password } });
+        const result = await loginFn({ data: { email, password } });
+        persistBrowserSession(result.admin);
       }
       await navigate({ to: "/painel" });
     } catch (error) {

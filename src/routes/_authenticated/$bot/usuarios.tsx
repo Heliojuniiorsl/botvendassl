@@ -1,11 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  queryOptions,
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
@@ -22,7 +16,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { PanelSubnav } from "@/components/PanelSubnav";
@@ -100,6 +94,17 @@ type ImageBotUser = {
   total_paid: number;
 };
 
+type ImageBotUserListResult = {
+  users: ImageBotUser[];
+  total_users: number;
+  filtered_users: number;
+  active_today: number;
+  premium_users: number;
+  total_deliveries: number;
+  limit: number;
+  offset: number;
+};
+
 type UserActivity = {
   id: string;
   action:
@@ -166,17 +171,32 @@ function ImageBotUsers() {
   const listFn = useServerFn(listImageBotUsers);
   const exportFn = useServerFn(exportImageBotUsersCsv);
   const updateAccessFn = useServerFn(updateImageBotUserAccess);
-  const { data: users } = useSuspenseQuery(
-    queryOptions({
-      queryKey: ["image-bot-users"],
-      queryFn: () => listFn() as Promise<ImageBotUser[]>,
-      refetchInterval: 15_000,
-    }),
-  );
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortMode>("activity");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<UserSection>("summary");
+  const deferredSearch = useDeferredValue(search.trim());
+  const usersQuery = useQuery({
+    queryKey: ["image-bot-users", deferredSearch, sort],
+    queryFn: () =>
+      listFn({
+        data: {
+          search: deferredSearch,
+          sort,
+          limit: 100,
+          offset: 0,
+        },
+      }) as Promise<ImageBotUserListResult>,
+    refetchInterval: 15_000,
+    retry: 1,
+  });
+  const userResult = usersQuery.data;
+  const visibleUsers = userResult?.users ?? [];
+  const totalUsers = userResult?.total_users ?? 0;
+  const filteredUsers = userResult?.filtered_users ?? totalUsers;
+  const activeToday = userResult?.active_today ?? 0;
+  const premiumUsers = userResult?.premium_users ?? 0;
+  const totalDeliveries = userResult?.total_deliveries ?? 0;
 
   const access = useMutation({
     mutationFn: (input: { telegram_user_id: number; is_blocked: boolean }) =>
@@ -190,29 +210,6 @@ function ImageBotUsers() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
-
-  const visibleUsers = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return users
-      .filter((user) => {
-        const content =
-          `${userName(user)} ${user.username ?? ""} ${user.telegram_user_id}`.toLowerCase();
-        return !term || content.includes(term);
-      })
-      .sort((left, right) => {
-        if (sort === "deliveries") return right.media_delivered_count - left.media_delivered_count;
-        if (sort === "favorites") return right.favorite_count - left.favorite_count;
-        if (sort === "payments") return right.total_paid - left.total_paid;
-        return Date.parse(right.last_activity_at) - Date.parse(left.last_activity_at);
-      });
-  }, [search, sort, users]);
-
-  const activeSince = Date.now() - 24 * 60 * 60 * 1000;
-  const activeToday = users.filter(
-    (user) => Date.parse(user.last_activity_at) >= activeSince,
-  ).length;
-  const premiumUsers = users.filter((user) => user.is_premium).length;
-  const totalDeliveries = users.reduce((sum, user) => sum + user.media_delivered_count, 0);
 
   const exportCsv = async () => {
     try {
@@ -257,7 +254,7 @@ function ImageBotUsers() {
             : "mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
         }
       >
-        <SummaryCard label="Total de usuarios" value={users.length} icon={Users} />
+        <SummaryCard label="Total de usuarios" value={totalUsers} icon={Users} />
         <SummaryCard label="Ativos nas ultimas 24h" value={activeToday} icon={Clock3} />
         <SummaryCard label="Usuarios Premium" value={premiumUsers} icon={Crown} />
         <SummaryCard label="Midias entregues" value={totalDeliveries} icon={Send} />
@@ -287,6 +284,10 @@ function ImageBotUsers() {
           </Select>
         </div>
 
+        {usersQuery.isFetching && (
+          <p className="text-xs text-muted-foreground">Atualizando resultados...</p>
+        )}
+
         <div className="overflow-x-auto rounded-2xl border">
           <Table>
             <TableHeader>
@@ -301,7 +302,21 @@ function ImageBotUsers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {!visibleUsers.length && (
+              {usersQuery.isLoading && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-14 text-center text-muted-foreground">
+                    Carregando usuarios...
+                  </TableCell>
+                </TableRow>
+              )}
+              {usersQuery.isError && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-14 text-center text-destructive">
+                    Nao consegui carregar os usuarios agora.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!usersQuery.isLoading && !usersQuery.isError && !visibleUsers.length && (
                 <TableRow>
                   <TableCell colSpan={7} className="py-14 text-center text-muted-foreground">
                     Nenhum usuario encontrado.
@@ -383,7 +398,8 @@ function ImageBotUsers() {
           </Table>
         </div>
         <p className="text-xs text-muted-foreground">
-          {visibleUsers.length} usuario(s) exibido(s).
+          Exibindo {visibleUsers.length} de {filteredUsers} usuario(s)
+          {deferredSearch ? " encontrados" : ""}. Total cadastrado: {totalUsers}.
         </p>
       </Card>
 

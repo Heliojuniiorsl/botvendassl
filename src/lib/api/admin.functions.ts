@@ -39,6 +39,7 @@ import {
   getImageBotPaymentHistory,
   getImageBotSettings as readImageBotSettings,
   getImageBotUserDetails,
+  getImageBotUsersPanel,
   getImageBotUsers,
   imageBotSqlite,
   recordImageBotAuditLog,
@@ -689,10 +690,19 @@ export const getImageBotDashboard = createServerFn({ method: "GET" }).handler(as
   return getImageBotDashboardStats();
 });
 
-export const listImageBotUsers = createServerFn({ method: "GET" }).handler(async () => {
-  await admin();
-  return getImageBotUsers();
+const imageBotUserListSchema = z.object({
+  search: z.string().trim().max(120).optional().default(""),
+  sort: z.enum(["activity", "deliveries", "favorites", "payments"]).optional().default("activity"),
+  limit: z.number().int().min(1).max(200).optional().default(100),
+  offset: z.number().int().min(0).optional().default(0),
 });
+
+export const listImageBotUsers = createServerFn({ method: "POST" })
+  .validator(imageBotUserListSchema)
+  .handler(async ({ data }) => {
+    await admin();
+    return getImageBotUsersPanel(data);
+  });
 
 export const listImageBotPayments = createServerFn({ method: "GET" }).handler(async () => {
   await admin();

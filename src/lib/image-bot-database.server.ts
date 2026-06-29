@@ -2094,8 +2094,61 @@ export type ImageBotUserRow = {
   total_paid: number;
 };
 
-export function getImageBotUsers(telegramUserId?: number): ImageBotUserRow[] {
+export type ImageBotUserSortMode = "activity" | "deliveries" | "favorites" | "payments";
+
+export type ImageBotUserListOptions = {
+  search?: string | null;
+  sort?: ImageBotUserSortMode;
+  limit?: number;
+  offset?: number;
+};
+
+export type ImageBotUserListResult = {
+  users: ImageBotUserRow[];
+  total_users: number;
+  filtered_users: number;
+  active_today: number;
+  premium_users: number;
+  total_deliveries: number;
+  limit: number;
+  offset: number;
+};
+
+function normalizeImageBotUserSearch(search?: string | null) {
+  return search?.trim().toLowerCase().slice(0, 120) ?? "";
+}
+
+function imageBotUserSearchSql(search: string) {
+  return search
+    ? ` AND lower(
+          COALESCE(users.first_name, '') || ' ' ||
+          COALESCE(users.last_name, '') || ' ' ||
+          COALESCE(users.username, '') || ' ' ||
+          CAST(users.telegram_user_id AS TEXT)
+        ) LIKE ?`
+    : "";
+}
+
+function imageBotUserSearchParams(search: string) {
+  return search ? [`%${search}%`] : [];
+}
+
+export function getImageBotUsers(
+  telegramUserId?: number,
+  options: ImageBotUserListOptions = {},
+): ImageBotUserRow[] {
   const nowIso = new Date().toISOString();
+  const search = normalizeImageBotUserSearch(options.search);
+  const limit = options.limit ? Math.min(500, Math.max(1, Math.trunc(options.limit))) : null;
+  const offset = Math.max(0, Math.trunc(options.offset ?? 0));
+  const orderBy: Record<ImageBotUserSortMode, string> = {
+    activity: "users.last_activity_at DESC",
+    deliveries: "users.media_delivered_count DESC, users.last_activity_at DESC",
+    favorites: "favorite_count DESC, users.last_activity_at DESC",
+    payments: "total_paid DESC, users.last_activity_at DESC",
+  };
+  const searchSql = imageBotUserSearchSql(search);
+  const limitSql = limit ? " LIMIT ? OFFSET ?" : "";
   const rows = imageBotSqlite
     .prepare(
       `SELECT users.id, users.telegram_user_id, users.username, users.first_name,
@@ -2167,7 +2220,9 @@ export function getImageBotUsers(telegramUserId?: number): ImageBotUserRow[] {
        LEFT JOIN user_navigation USING (telegram_user_id)
        WHERE users.first_started_at IS NOT NULL
          AND (? IS NULL OR users.telegram_user_id = ?)
-       ORDER BY users.last_activity_at DESC`,
+         ${searchSql}
+       ORDER BY ${orderBy[options.sort ?? "activity"]}
+       ${limitSql}`,
     )
     .all(
       nowIso,
@@ -2184,6 +2239,8 @@ export function getImageBotUsers(telegramUserId?: number): ImageBotUserRow[] {
       nowIso,
       telegramUserId ?? null,
       telegramUserId ?? null,
+      ...imageBotUserSearchParams(search),
+      ...(limit ? [limit, offset] : []),
     ) as (Omit<
     ImageBotUserRow,
     | "is_admin"
@@ -2215,6 +2272,82 @@ export function getImageBotUsers(telegramUserId?: number): ImageBotUserRow[] {
       Number(row.active_category_access_count) > 0 ||
       Number(row.active_limit_boost_count) > 0,
   }));
+}
+
+export function getImageBotUsersPanel(
+  options: ImageBotUserListOptions = {},
+): ImageBotUserListResult {
+  const nowIso = new Date().toISOString();
+  const activeSinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const search = normalizeImageBotUserSearch(options.search);
+  const limit = Math.min(200, Math.max(1, Math.trunc(options.limit ?? 100)));
+  const offset = Math.max(0, Math.trunc(options.offset ?? 0));
+  const searchSql = imageBotUserSearchSql(search);
+  const searchParams = imageBotUserSearchParams(search);
+  const users = getImageBotUsers(undefined, {
+    search,
+    sort: options.sort ?? "activity",
+    limit,
+    offset,
+  });
+  const summary = imageBotSqlite
+    .prepare(
+      `SELECT COUNT(*) AS total_users,
+              COALESCE(SUM(CASE WHEN last_activity_at >= ? THEN 1 ELSE 0 END), 0) AS active_today,
+              COALESCE(SUM(media_delivered_count), 0) AS total_deliveries
+       FROM users
+       WHERE first_started_at IS NOT NULL`,
+    )
+    .get(activeSinceIso) as {
+    total_users: number;
+    active_today: number;
+    total_deliveries: number;
+  };
+  const filtered = imageBotSqlite
+    .prepare(
+      `SELECT COUNT(*) AS total
+       FROM users
+       WHERE users.first_started_at IS NOT NULL
+       ${searchSql}`,
+    )
+    .get(...searchParams) as { total: number };
+  const premium = imageBotSqlite
+    .prepare(
+      `SELECT COUNT(*) AS total
+       FROM users
+       WHERE users.first_started_at IS NOT NULL
+         AND (
+           EXISTS (
+             SELECT 1 FROM premium_access
+             WHERE premium_access.telegram_user_id = users.telegram_user_id
+               AND premium_access.starts_at <= ?
+               AND (premium_access.expires_at IS NULL OR premium_access.expires_at > ?)
+           )
+           OR EXISTS (
+             SELECT 1 FROM paid_access
+             WHERE paid_access.telegram_user_id = users.telegram_user_id
+               AND paid_access.expires_at > ?
+           )
+           OR EXISTS (
+             SELECT 1 FROM daily_limit_boosts
+             WHERE daily_limit_boosts.telegram_user_id = users.telegram_user_id
+               AND daily_limit_boosts.starts_at <= ?
+               AND (daily_limit_boosts.expires_at IS NULL OR daily_limit_boosts.expires_at > ?)
+           )
+         )`,
+    )
+    .get(nowIso, nowIso, nowIso, nowIso, nowIso) as { total: number };
+
+  return {
+    users,
+    total_users: Number(summary.total_users ?? 0),
+    filtered_users: Number(filtered.total ?? 0),
+    active_today: Number(summary.active_today ?? 0),
+    premium_users: Number(premium.total ?? 0),
+    total_deliveries: Number(summary.total_deliveries ?? 0),
+    limit,
+    offset,
+  };
 }
 
 export type ImageBotUserHistoryRow = {

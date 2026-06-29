@@ -27,6 +27,7 @@ import {
   getImageBotUserDetails,
   getImageBotUserCategory,
   getImageBotUserLanguage,
+  getImageBotUsersPanel,
   getImageBotUsers,
   getRandomActiveImageBotMedia,
   getImageBotSettings,
@@ -728,15 +729,15 @@ function formatAdminMediaLine(media: AdminMediaRow, index: number) {
 
 function formatAdminStatusMessage() {
   const stats = getImageBotAdminStats();
-  const users = getImageBotUsers();
+  const users = getImageBotUsersPanel({ limit: 1 });
   const groups = getImageBotGroups();
   const activeGroups = groups.filter((group) => group.is_active).length;
-  const admins = users.filter((user) => user.is_admin).length;
+  const admins = getImageBotAdminPermissions().length;
 
   return [
     "<b>Painel Admin - Status</b>",
     "",
-    `Usuarios: ${users.length}`,
+    `Usuarios: ${users.total_users}`,
     `Admins: ${admins}`,
     `Grupos ativos: ${activeGroups}/${groups.length}`,
     "",
@@ -839,19 +840,17 @@ function formatAdminTrashMessage() {
 }
 
 function formatAdminUsersMessage() {
-  const users = getImageBotUsers();
-  const active24h = Date.now() - 24 * 60 * 60 * 1000;
-  const activeToday = users.filter((user) => Date.parse(user.last_activity_at) >= active24h);
-  const blocked = users.filter((user) => user.is_blocked);
-  const admins = users.filter((user) => user.is_admin);
+  const stats = getImageBotAdminStats();
+  const users = getImageBotUsersPanel({ limit: 1 });
+  const admins = getImageBotAdminPermissions().length;
 
   return [
     "<b>Painel Admin - Usuarios</b>",
     "",
-    `Total: ${users.length}`,
-    `Ativos 24h: ${activeToday.length}`,
-    `Bloqueados: ${blocked.length}`,
-    `Admins: ${admins.length}`,
+    `Total: ${users.total_users}`,
+    `Ativos 24h: ${stats.activeUsers.today}`,
+    `Bloqueados: ${stats.blockRate.blockedUsers}`,
+    `Admins: ${admins}`,
     "",
     "Use os submenus para ver ativos, bloqueados, mais ativos e comandos por ID.",
   ].join("\n");
@@ -859,7 +858,7 @@ function formatAdminUsersMessage() {
 
 function formatAdminActiveUsersMessage() {
   const active24h = Date.now() - 24 * 60 * 60 * 1000;
-  const users = getImageBotUsers()
+  const users = getImageBotUsers(undefined, { sort: "activity", limit: 50 })
     .filter((user) => Date.parse(user.last_activity_at) >= active24h)
     .slice(0, 8);
   return [
@@ -875,7 +874,7 @@ function formatAdminActiveUsersMessage() {
 }
 
 function formatAdminBlockedUsersMessage() {
-  const users = getImageBotUsers()
+  const users = getImageBotUsers(undefined, { sort: "activity", limit: 200 })
     .filter((user) => user.is_blocked)
     .slice(0, 8);
   return [
@@ -891,9 +890,7 @@ function formatAdminBlockedUsersMessage() {
 }
 
 function formatAdminTopUsersMessage() {
-  const users = [...getImageBotUsers()]
-    .sort((left, right) => right.media_delivered_count - left.media_delivered_count)
-    .slice(0, 8);
+  const users = getImageBotUsers(undefined, { sort: "deliveries", limit: 8 });
   return [
     "<b>Usuarios - Mais ativos</b>",
     "",

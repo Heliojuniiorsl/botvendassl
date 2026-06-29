@@ -15,13 +15,17 @@ function AuthenticatedRoute() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    void sessionFn().then((session) => {
-      if (!session.authenticated) {
+    void sessionFn()
+      .then((session) => {
+        if (!session.authenticated) {
+          void navigate({ to: "/" });
+          return;
+        }
+        setReady(true);
+      })
+      .catch(() => {
         void navigate({ to: "/" });
-        return;
-      }
-      setReady(true);
-    });
+      });
   }, [navigate, sessionFn]);
 
   if (!ready) return <div className="p-8 text-sm text-muted-foreground">Validando sessão...</div>;
