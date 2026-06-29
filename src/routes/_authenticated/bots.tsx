@@ -682,6 +682,98 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       </p>
                     </div>
 
+                    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                          <Bot className="h-4 w-4" />
+                          Token do bot que sera criado
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Cole aqui o token recebido no BotFather. O CriaBot valida e mostra a
+                          previa do bot automaticamente.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telegram_token">Token do bot</Label>
+                        <Input
+                          id="telegram_token"
+                          value={token}
+                          onChange={(event) => handleTokenChange(event.target.value)}
+                          placeholder="1234567890:ABC..."
+                          type="password"
+                          autoComplete="off"
+                          required
+                          className={
+                            !tokenHasValidFormat || validationError
+                              ? "border-destructive"
+                              : undefined
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Formato esperado: numeros, dois pontos e a chave secreta do BotFather.
+                        </p>
+                        {!tokenHasValidFormat && (
+                          <p className="flex items-center gap-1 text-xs font-medium text-destructive">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Token em formato invalido.
+                          </p>
+                        )}
+                        {validationError && (
+                          <p className="flex items-center gap-1 text-xs font-medium text-destructive">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            {validationError}
+                          </p>
+                        )}
+                      </div>
+                      {validateToken.isPending && hasToken && tokenHasValidFormat && (
+                        <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+                          <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                          Validando token automaticamente...
+                        </div>
+                      )}
+                      {validatedTokenIsCurrent && validatedBot && (
+                        <div className="mt-4 flex items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                          {validatedBot.photo_data_url ? (
+                            <img
+                              src={validatedBot.photo_data_url}
+                              alt={`Foto de ${validatedBot.display_name}`}
+                              className="h-16 w-16 rounded-2xl object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                              <Bot className="h-8 w-8" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Token validado
+                            </div>
+                            <p className="mt-1 truncate font-display text-xl font-semibold">
+                              {validatedBot.display_name}
+                            </p>
+                            <p className="truncate text-sm text-muted-foreground">
+                              @{validatedBot.username}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-4"
+                        onClick={handleValidateToken}
+                        disabled={!hasToken || !tokenHasValidFormat || validateToken.isPending}
+                      >
+                        {validateToken.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                        )}
+                        {validateToken.isPending ? "Validando..." : "Validar token"}
+                      </Button>
+                    </div>
+
                     <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
@@ -809,83 +901,6 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         )
                       )}
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="telegram_token">Token do bot</Label>
-                      <Input
-                        id="telegram_token"
-                        value={token}
-                        onChange={(event) => handleTokenChange(event.target.value)}
-                        placeholder="1234567890:ABC..."
-                        type="password"
-                        autoComplete="off"
-                        required
-                        className={
-                          !tokenHasValidFormat || validationError ? "border-destructive" : undefined
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Formato esperado: numeros, dois pontos e a chave secreta do BotFather.
-                      </p>
-                      {!tokenHasValidFormat && (
-                        <p className="flex items-center gap-1 text-xs font-medium text-destructive">
-                          <AlertCircle className="h-3.5 w-3.5" />
-                          Token em formato invalido.
-                        </p>
-                      )}
-                      {validationError && (
-                        <p className="flex items-center gap-1 text-xs font-medium text-destructive">
-                          <AlertCircle className="h-3.5 w-3.5" />
-                          {validationError}
-                        </p>
-                      )}
-                    </div>
-                    {validateToken.isPending && hasToken && tokenHasValidFormat && (
-                      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
-                        <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                        Validando token automaticamente...
-                      </div>
-                    )}
-                    {validatedTokenIsCurrent && validatedBot && (
-                      <div className="flex items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                        {validatedBot.photo_data_url ? (
-                          <img
-                            src={validatedBot.photo_data_url}
-                            alt={`Foto de ${validatedBot.display_name}`}
-                            className="h-16 w-16 rounded-2xl object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                            <Bot className="h-8 w-8" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Token validado
-                          </div>
-                          <p className="mt-1 truncate font-display text-xl font-semibold">
-                            {validatedBot.display_name}
-                          </p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            @{validatedBot.username}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleValidateToken}
-                      disabled={!hasToken || !tokenHasValidFormat || validateToken.isPending}
-                    >
-                      {validateToken.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                      )}
-                      {validateToken.isPending ? "Validando..." : "Validar token"}
-                    </Button>
                   </div>
                 )}
 
