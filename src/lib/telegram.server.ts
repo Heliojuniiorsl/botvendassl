@@ -508,6 +508,18 @@ export async function getChatMemberCountWithToken(token: string, chatId: number 
   return Number(response.result);
 }
 
+export function getChatWithToken(token: string, chatId: number | string) {
+  return callWithToken(token, "getChat", { chat_id: chatId }).then(
+    (response) =>
+      response.result as {
+        id: number;
+        title?: string;
+        username?: string;
+        type?: "group" | "supergroup" | "channel" | "private";
+      },
+  );
+}
+
 export function getChatMemberWithToken(
   token: string,
   chatId: number | string,

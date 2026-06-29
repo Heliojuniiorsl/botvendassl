@@ -73,11 +73,22 @@ type TokenValidationResult = {
   bot: Omit<ValidatedTelegramBot, "token">;
 };
 
+type TelegramChatType = "group" | "supergroup" | "channel" | "private" | null;
+
 type VipVerificationResult = {
-  ok: true;
+  ok: boolean;
   chat_id: number;
-  bot_status: "creator" | "administrator" | "member" | "restricted" | "left" | "kicked";
+  chat: {
+    id: number;
+    title: string;
+    username: string | null;
+    type: TelegramChatType;
+  } | null;
+  bot_status: "creator" | "administrator" | "member" | "restricted" | "left" | "kicked" | null;
+  bot_in_chat: boolean;
+  is_admin: boolean;
   member_count: number | null;
+  message: string | null;
 };
 
 type CriaBotLinkedUser = {
@@ -123,6 +134,25 @@ type CreateManagedBotInput = {
 };
 
 const telegramBotTokenPattern = /^\d{6,14}:[A-Za-z0-9_-]{30,}$/;
+
+function formatTelegramChatType(type: TelegramChatType) {
+  if (type === "channel") return "Canal";
+  if (type === "supergroup") return "Supergrupo";
+  if (type === "group") return "Grupo";
+  if (type === "private") return "Privado";
+  return "Grupo/canal";
+}
+
+function formatBotChatStatus(status: VipVerificationResult["bot_status"]) {
+  if (status === "creator") return "Criador";
+  if (status === "administrator") return "Administrador";
+  if (status === "member") return "Membro";
+  if (status === "restricted") return "Restrito";
+  if (status === "left") return "Fora";
+  if (status === "kicked") return "Removido";
+  return "Nao encontrado";
+}
+
 const wizardSteps = [
   {
     id: 1,
@@ -302,8 +332,12 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
       verifyVipChatFn({ data }) as Promise<VipVerificationResult>,
     onSuccess: (result) => {
       setVipVerification(result);
-      setVipVerificationError(null);
-      toast.success("Grupo/canal VIP verificado");
+      setVipVerificationError(result.ok ? null : result.message);
+      if (result.ok) {
+        toast.success("Grupo/canal VIP verificado");
+      } else {
+        toast.error(result.message || "O bot ainda nao esta pronto nesse grupo/canal.");
+      }
     },
     onError: (error: any) => {
       const message = error?.message || "Nao consegui verificar esse grupo/canal VIP.";
@@ -348,8 +382,9 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   const vipChatIdNumber = Number(vipChatId.trim());
   const vipChatIdIsValid =
     /^-?\d+$/.test(vipChatId.trim()) && Number.isInteger(vipChatIdNumber) && vipChatIdNumber < 0;
-  const vipVerificationIsCurrent =
+  const vipPreviewIsCurrent =
     Boolean(vipVerification) && vipVerification?.chat_id === vipChatIdNumber;
+  const vipVerificationIsCurrent = vipPreviewIsCurrent && Boolean(vipVerification?.ok);
   const planPriceNumber = parseMoneyInput(planPrice);
   const planPriceIsValid = Number.isFinite(planPriceNumber) && planPriceNumber >= 0;
   const planDurationNumber = Number(planDurationDays);
@@ -944,16 +979,87 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       )}
                       {vipVerificationIsCurrent ? "VIP verificado" : "Verificar grupo/canal VIP"}
                     </Button>
-                    {vipVerificationIsCurrent && (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-                        Bot confirmado como administrador
-                        {vipVerification?.member_count != null
-                          ? ` · ${vipVerification.member_count} membro(s)`
-                          : ""}
-                        .
+                    {vipPreviewIsCurrent && vipVerification && (
+                      <div
+                        className={`rounded-2xl border p-4 text-sm ${
+                          vipVerification.ok
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border-amber-200 bg-amber-50 text-amber-900"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div
+                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                                vipVerification.ok
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {vipVerification.ok ? (
+                                <CheckCircle2 className="h-5 w-5" />
+                              ) : (
+                                <AlertCircle className="h-5 w-5" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold">
+                                {vipVerification.chat?.title || "Grupo/canal encontrado"}
+                              </p>
+                              <p className="mt-1 text-xs opacity-80">
+                                {formatTelegramChatType(vipVerification.chat?.type ?? null)} - ID{" "}
+                                {vipVerification.chat_id}
+                                {vipVerification.chat?.username
+                                  ? ` - @${vipVerification.chat.username}`
+                                  : ""}
+                                {vipVerification.member_count != null
+                                  ? ` - ${vipVerification.member_count} membro(s)`
+                                  : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                              vipVerification.ok
+                                ? "bg-emerald-600 text-white"
+                                : "bg-amber-200 text-amber-950"
+                            }`}
+                          >
+                            {vipVerification.ok ? "Pronto" : "Precisa ajustar"}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                          <div className="rounded-2xl bg-white/70 p-3">
+                            <p className="text-xs opacity-70">Grupo/canal</p>
+                            <p className="mt-1 font-semibold">
+                              {vipVerification.chat ? "Encontrado" : "Nao encontrado"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl bg-white/70 p-3">
+                            <p className="text-xs opacity-70">Bot no grupo/canal</p>
+                            <p className="mt-1 font-semibold">
+                              {vipVerification.bot_in_chat ? "Sim" : "Nao"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl bg-white/70 p-3">
+                            <p className="text-xs opacity-70">Permissao do bot</p>
+                            <p className="mt-1 font-semibold">
+                              {vipVerification.is_admin
+                                ? "Administrador"
+                                : formatBotChatStatus(vipVerification.bot_status)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {vipVerification.message && !vipVerification.ok && (
+                          <p className="mt-3 rounded-2xl bg-white/70 p-3 text-xs font-medium">
+                            {vipVerification.message}
+                          </p>
+                        )}
                       </div>
                     )}
-                    {vipVerificationError && (
+                    {vipVerificationError && !vipPreviewIsCurrent && (
                       <p className="flex items-center gap-1 text-xs font-medium text-destructive">
                         <AlertCircle className="h-3.5 w-3.5" />
                         {vipVerificationError}

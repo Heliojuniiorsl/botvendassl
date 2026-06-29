@@ -59,11 +59,33 @@ import { recordCustomerEvent } from "@/lib/sales.server";
 import {
   getBotInfoWithToken,
   getBotPhotoDataUrlWithToken,
+  getChatWithToken,
   getChatMemberCountWithToken,
   getChatMemberWithToken,
   leaveChatWithToken,
   sendMessageWithToken,
 } from "@/lib/telegram.server";
+
+function friendlyVipChatError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const lower = message.toLowerCase();
+  if (lower.includes("bot was kicked")) {
+    return "Este bot foi removido desse grupo/canal. Adicione o bot novamente e promova como administrador.";
+  }
+  if (lower.includes("chat not found") || lower.includes("member not found")) {
+    return "Nao encontrei esse grupo/canal para este bot. Confira o ID e adicione o bot ao grupo/canal.";
+  }
+  if (lower.includes("not enough rights") || lower.includes("not administrator")) {
+    return "O bot esta no grupo/canal, mas precisa ser promovido a administrador.";
+  }
+  if (lower.includes("forbidden")) {
+    return "O Telegram bloqueou a consulta. Adicione o bot ao grupo/canal e promova como administrador.";
+  }
+  if (lower.includes("bad request")) {
+    return "Nao consegui consultar esse grupo/canal. Confira se o ID esta correto.";
+  }
+  return "Nao consegui verificar esse grupo/canal VIP. Confira se o bot esta nele e tente novamente.";
+}
 
 async function admin() {
   enterSalesBotRuntime(null);
@@ -357,19 +379,55 @@ export const verifyManagedSalesBotVipChat = createServerFn({ method: "POST" })
     requireAccountSession();
     const token = data.token.trim();
     const info = await getBotInfoWithToken(token);
+    const chat = await getChatWithToken(token, data.vip_chat_id).catch(() => null);
+    const chatPreview = chat
+      ? {
+          id: chat.id,
+          title: chat.title || chat.username || String(data.vip_chat_id),
+          username: chat.username || null,
+          type: chat.type || null,
+        }
+      : null;
+
+    let memberErrorMessage: string | null = null;
     const member = await getChatMemberWithToken(token, data.vip_chat_id, Number(info.id)).catch(
       (error) => {
-        const message = error instanceof Error ? error.message : "Falha ao verificar o grupo VIP";
-        throw new Error(
-          message.includes("chat not found") || message.includes("member not found")
-            ? "Nao encontrei esse grupo/canal para este bot. Confira se o bot foi adicionado e se o ID esta correto."
-            : message,
-        );
+        memberErrorMessage = friendlyVipChatError(error);
+        return null;
       },
     );
+
+    if (!member) {
+      return {
+        ok: false,
+        chat_id: data.vip_chat_id,
+        chat: chatPreview,
+        bot_status: null,
+        bot_in_chat: false,
+        is_admin: false,
+        member_count: null,
+        message:
+          chatPreview != null
+            ? "Grupo/canal encontrado, mas o bot nao esta participando ou nao pode ser consultado."
+            : memberErrorMessage || friendlyVipChatError(null),
+      };
+    }
+
+    const botIsInChat = member.status !== "left" && member.status !== "kicked";
     const botIsAdmin = member.status === "administrator" || member.status === "creator";
     if (!botIsAdmin) {
-      throw new Error("O bot foi encontrado, mas precisa ser administrador do grupo/canal VIP.");
+      return {
+        ok: false,
+        chat_id: data.vip_chat_id,
+        chat: chatPreview,
+        bot_status: member.status,
+        bot_in_chat: botIsInChat,
+        is_admin: false,
+        member_count: null,
+        message: botIsInChat
+          ? "Grupo/canal encontrado. O bot esta nele, mas precisa ser administrador para entregar o acesso."
+          : "Grupo/canal encontrado, mas o bot nao esta participando. Adicione o bot e promova como administrador.",
+      };
     }
     const memberCount = await getChatMemberCountWithToken(token, data.vip_chat_id).catch(
       () => null,
@@ -378,8 +436,12 @@ export const verifyManagedSalesBotVipChat = createServerFn({ method: "POST" })
     return {
       ok: true,
       chat_id: data.vip_chat_id,
+      chat: chatPreview,
       bot_status: member.status,
+      bot_in_chat: true,
+      is_admin: true,
       member_count: memberCount,
+      message: null,
     };
   });
 
