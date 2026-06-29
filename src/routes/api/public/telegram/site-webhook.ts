@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/public/telegram/site-webhook")({
 
         await sendCriaBotMessage(
           chatId,
-          `Conta vinculada com sucesso.\n\nUsuario: <b>${escapeHtml(name)}</b>\nID Telegram: <code>${linked?.telegram_user_id}</code>\n\nAgora volte ao CriaBot. O preview do passo 1 vai atualizar automaticamente.`,
+          `Conta vinculada com sucesso.\n\nUsuario: <b>${escapeHtml(name)}</b>\nID Telegram: <code>${linked?.telegram_user_id}</code>\n\nAgora volte ao Site CriaBot. Para continuar a criação do bot.`,
         );
 
         return Response.json({ ok: true, linked: true });
