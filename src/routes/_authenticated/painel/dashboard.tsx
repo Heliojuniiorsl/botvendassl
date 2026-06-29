@@ -74,12 +74,12 @@ function DashboardPage() {
   return (
     <div className="space-y-6">
       <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card className="overflow-hidden border bg-white/90 p-6 shadow-sm backdrop-blur sm:p-8">
+        <Card className="overflow-hidden border bg-card p-6 shadow-sm backdrop-blur sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
             <Sparkles className="h-4 w-4" />
             Bem-vindo ao painel CriaBot
           </div>
-          <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight text-[#202124] sm:text-5xl">
+          <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             Olá, {firstName}. Controle seus bots em um só lugar.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
@@ -129,7 +129,7 @@ function DashboardPage() {
         </div>
       </section>
 
-      <Card className="border bg-white/90 p-5 shadow-sm sm:p-6">
+      <Card className="border bg-card p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-display text-2xl font-semibold">Bots recentes</h2>
@@ -164,7 +164,7 @@ function DashboardPage() {
           )}
           {bots.slice(0, 5).map((bot) => (
             <div
-              className="flex flex-col gap-3 rounded-2xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-2xl border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
               key={bot.key}
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -220,7 +220,7 @@ function SummaryCard({
   icon: LucideIcon;
 }) {
   return (
-    <Card className="border bg-white/90 p-5 shadow-sm">
+    <Card className="border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground">{title}</span>
         <Icon className="h-5 w-5 text-primary" />

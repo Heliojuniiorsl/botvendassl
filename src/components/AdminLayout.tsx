@@ -61,7 +61,7 @@ export function AdminLayout({ bot, children }: { bot: ManagedBotPanel; children:
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <aside className="hidden min-h-0 w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 md:flex">
-            <div className="flex items-center gap-3 rounded-3xl border bg-background/70 px-3 py-3">
+            <div className="flex items-center gap-3 rounded-3xl border bg-card px-3 py-3 shadow-sm">
               {bot.photo_data_url ? (
                 <img
                   src={bot.photo_data_url}
@@ -91,8 +91,8 @@ export function AdminLayout({ bot, children }: { bot: ManagedBotPanel; children:
                     className={cn(
                       "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
                       active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -138,7 +138,7 @@ export function AdminLayout({ bot, children }: { bot: ManagedBotPanel; children:
                 );
               })}
             </nav>
-            <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-[#fafafa] p-3 pb-8 sm:p-4 md:p-8">
+            <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-[#F5F5F3] p-3 pb-8 sm:p-4 md:p-8">
               <div className="mx-auto w-full max-w-[1440px]">{children}</div>
             </main>
           </div>

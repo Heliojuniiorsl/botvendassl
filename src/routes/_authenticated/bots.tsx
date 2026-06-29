@@ -204,14 +204,17 @@ function MiniTutorial({
   items: Array<{ title: string; body: string }>;
 }) {
   return (
-    <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+    <div className="rounded-2xl border border-border bg-[#F5F5F3] p-4">
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
         <ShieldCheck className="h-4 w-4" />
         {title}
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {items.map((item, index) => (
-          <div key={`${item.title}-${index}`} className="rounded-2xl bg-white/80 p-3 text-sm">
+          <div
+            key={`${item.title}-${index}`}
+            className="rounded-2xl bg-background p-3 text-sm shadow-sm"
+          >
             <p className="font-semibold">
               {index + 1}. {item.title}
             </p>
@@ -572,7 +575,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
       className={
         embedded
           ? "relative overflow-hidden"
-          : "relative min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_15%_0%,rgba(26,115,232,.14),transparent_28rem),linear-gradient(180deg,#ffffff_0%,#f8fafd_100%)] px-4 py-6 sm:px-5 sm:py-12"
+          : "relative min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_15%_0%,rgba(37,99,235,.08),transparent_28rem),linear-gradient(180deg,#ffffff_0%,#f5f5f3_100%)] px-4 py-6 sm:px-5 sm:py-12"
       }
     >
       {!embedded && (
@@ -586,7 +589,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
         }
       >
         {!(isCreateMode && embedded) && (
-          <section className="rounded-[2rem] border bg-white/95 p-5 shadow-sm sm:p-6">
+          <section className="rounded-[2rem] border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 {!embedded && <BrandMark subtitle="Painel da plataforma" />}
@@ -656,7 +659,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
 
         {isCreateMode && (
           <Card
-            className={`overflow-hidden border bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 ${
+            className={`overflow-hidden border bg-card p-5 shadow-sm backdrop-blur sm:p-6 ${
               embedded ? "mt-6" : "mt-8"
             }`}
           >
@@ -686,7 +689,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         ? "border-primary bg-primary text-primary-foreground shadow-sm"
                         : done
                           ? "border-primary/30 bg-primary/5"
-                          : "bg-white"
+                          : "bg-background"
                     } ${blocked ? "cursor-not-allowed opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-2">
@@ -716,7 +719,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
               }`}
             >
               <form
-                className="rounded-3xl border bg-white p-5"
+                className="rounded-3xl border bg-background p-5 shadow-sm"
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (step === 4) {
@@ -752,7 +755,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       ]}
                     />
 
-                    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+                    <div className="rounded-2xl border bg-card p-4 shadow-sm">
                       <div className="mb-4">
                         <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                           <Bot className="h-4 w-4" />
@@ -880,7 +883,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       </div>
 
                       {criaBotLinkQuery.isLoading && (
-                        <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-muted-foreground">
+                        <div className="mt-4 rounded-2xl bg-background p-4 text-sm text-muted-foreground">
                           <Loader2 className="mr-2 inline h-4 w-4 animate-spin text-primary" />
                           Consultando bot oficial...
                         </div>
@@ -893,7 +896,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       )}
 
                       {criaBotLinkStatus?.bot && (
-                        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/80 p-3 text-sm">
+                        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-background p-3 text-sm shadow-sm">
                           {criaBotLinkStatus.bot.photo_data_url ? (
                             <img
                               src={criaBotLinkStatus.bot.photo_data_url}
@@ -959,7 +962,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       ) : (
                         criaBotLinkStatus?.configured &&
                         !criaBotLinkStatus.error && (
-                          <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm text-muted-foreground">
+                          <p className="mt-4 rounded-2xl bg-background p-4 text-sm text-muted-foreground">
                             Depois que o usuario abrir o bot oficial e der /start, o preview aparece
                             aqui automaticamente.
                           </p>
@@ -1420,7 +1423,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
               </Card>
             )}
             {!botsQuery.isLoading && !botsQuery.isError && bots.length > 0 && (
-              <Card className="overflow-hidden border bg-white/95 shadow-sm">
+              <Card className="overflow-hidden border bg-card shadow-sm">
                 <div className="hidden">
                   <span>Bot</span>
                   <span>Tipo</span>

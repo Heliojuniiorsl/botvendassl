@@ -169,7 +169,7 @@ function ImageBotStatistics() {
                 </div>
                 <div className="grid grid-cols-3 gap-1">
                   <Bar value={item.users} max={maxGrowth} className="bg-blue-500" />
-                  <Bar value={item.media} max={maxGrowth} className="bg-emerald-500" />
+                  <Bar value={item.media} max={maxGrowth} className="bg-blue-300" />
                   <Bar value={item.deliveries} max={maxGrowth} className="bg-primary" />
                 </div>
               </div>
@@ -177,7 +177,7 @@ function ImageBotStatistics() {
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge className="bg-blue-500">Usuarios</Badge>
-            <Badge className="bg-emerald-500">Midias</Badge>
+            <Badge className="bg-blue-300 text-foreground">Midias</Badge>
             <Badge>Entregas</Badge>
           </div>
         </Card>
@@ -245,7 +245,7 @@ function StackedBar({
     <div>
       <div className="flex h-4 overflow-hidden rounded-full bg-muted">
         <div className="bg-primary" style={{ width: `${leftPercent}%` }} />
-        <div className="bg-emerald-500" style={{ width: `${100 - leftPercent}%` }} />
+        <div className="bg-blue-300" style={{ width: `${100 - leftPercent}%` }} />
       </div>
       <div className="mt-2 flex justify-between text-xs text-muted-foreground">
         <span>{leftLabel}</span>

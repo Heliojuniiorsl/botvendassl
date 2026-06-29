@@ -49,41 +49,41 @@
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 1.25rem;
 
-  /* Clean light palette inspired by Google One. */
+  /* CriaBot clean SaaS palette: white, soft gray, black and blue. */
   --background: #ffffff;
-  --foreground: #202124;
-  --card: #f7f7f5;
-  --card-foreground: #202124;
+  --foreground: #111111;
+  --card: #f4f4f2;
+  --card-foreground: #111111;
   --popover: #ffffff;
-  --popover-foreground: #202124;
-  --primary: #1a73e8;
+  --popover-foreground: #111111;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #eef3fd;
-  --secondary-foreground: #174ea6;
-  --muted: #f1f3f4;
-  --muted-foreground: #5f6368;
-  --accent: #e8f0fe;
-  --accent-foreground: #174ea6;
-  --destructive: #d93025;
+  --secondary: #f5f5f3;
+  --secondary-foreground: #111111;
+  --muted: #f5f5f3;
+  --muted-foreground: #4b5563;
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #dadce0;
-  --input: #c7cacf;
-  --ring: #1a73e8;
-  --chart-1: #1a73e8;
-  --chart-2: #34a853;
-  --chart-3: #fbbc04;
-  --chart-4: #ea4335;
-  --chart-5: #9334e6;
+  --border: #e5e7eb;
+  --input: #d1d5db;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #1d4ed8;
+  --chart-3: #60a5fa;
+  --chart-4: #64748b;
+  --chart-5: #111827;
   --sidebar: #ffffff;
-  --sidebar-foreground: #3c4043;
-  --sidebar-primary: #1a73e8;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8f0fe;
-  --sidebar-accent-foreground: #174ea6;
-  --sidebar-border: #e3e5e8;
-  --sidebar-ring: #1a73e8;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #1d4ed8;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #2563eb;
 }
 
 .dark {
@@ -101,7 +101,9 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f5f5f3 100%) fixed,
+      var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

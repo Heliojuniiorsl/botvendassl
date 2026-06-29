@@ -34,7 +34,7 @@ export function PainelHeader({ forceActiveTo }: { forceActiveTo?: string }) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white/90 shadow-sm backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-[0_10px_30px_rgba(17,17,17,0.05)] backdrop-blur">
       <div className="mx-auto flex min-h-20 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link
           to="/painel/dashboard"
@@ -87,7 +87,7 @@ export function PainelHeader({ forceActiveTo }: { forceActiveTo?: string }) {
       </div>
 
       {mobileOpen ? (
-        <div className="border-t border-border bg-white px-4 py-3 shadow-sm md:hidden">
+        <div className="border-t border-border bg-background px-4 py-3 shadow-sm md:hidden">
           <nav className="mx-auto grid max-w-7xl gap-2">
             {painelNav.map((item) => {
               const Icon = item.icon;

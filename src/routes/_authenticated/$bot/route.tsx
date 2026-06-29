@@ -60,7 +60,7 @@ function ManagedBotRoute() {
 
   if (!bot?.username) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#fafafa] p-4">
+      <main className="flex min-h-dvh items-center justify-center bg-[#F5F5F3] p-4">
         <Card className="w-full max-w-md p-8 text-center">
           <h1 className="font-display text-2xl font-semibold">Bot não encontrado</h1>
           <p className="mt-2 text-sm text-muted-foreground">

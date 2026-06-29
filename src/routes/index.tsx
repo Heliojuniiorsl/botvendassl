@@ -76,14 +76,14 @@ function getPasswordStrength(password: string): PasswordStrength | null {
       label: "Boa",
       helper: "Quase perfeita.",
       width: "w-2/3",
-      color: "bg-[#fbbc04]",
+      color: "bg-primary/70",
     };
   }
   return {
     label: "Forte",
     helper: "Boa para proteger seus bots.",
     width: "w-full",
-    color: "bg-[#34a853]",
+    color: "bg-primary",
   };
 }
 
@@ -170,13 +170,13 @@ function LoginPage() {
     : "Entre para administrar seus bots, planos, pagamentos e automacoes.";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f8fafd] text-foreground">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_25%_20%,rgba(26,115,232,.18),transparent_30rem),radial-gradient(circle_at_80%_10%,rgba(52,168,83,.12),transparent_24rem)]" />
+    <main className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f3_100%)] text-foreground">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_25%_20%,rgba(37,99,235,.12),transparent_30rem)]" />
       <div className="pointer-events-none absolute bottom-[-12rem] left-[-12rem] h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-10rem] top-[20%] h-96 w-96 rounded-full bg-[#34a853]/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-10rem] top-[20%] h-96 w-96 rounded-full bg-[#F1F0ED] blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between rounded-[1.75rem] border bg-white/85 px-4 py-3 shadow-sm backdrop-blur md:px-6">
+        <header className="flex items-center justify-between rounded-[1.75rem] border bg-background/90 px-4 py-3 shadow-sm backdrop-blur md:px-6">
           <BrandMark subtitle="Plataforma de bots para Telegram" />
           <div className="flex items-center gap-2">
             <Button
@@ -200,13 +200,13 @@ function LoginPage() {
 
         <section className="grid flex-1 items-center gap-9 py-8 lg:grid-cols-[1.04fr_0.96fr] lg:py-12">
           <div className="space-y-7">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/90 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
               <Sparkles className="h-4 w-4" />
               Crie bots para voce ou para seus clientes
             </div>
 
             <div className="max-w-3xl space-y-5">
-              <h1 className="font-display text-4xl font-semibold tracking-tight text-[#202124] sm:text-5xl lg:text-6xl">
+              <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                 Sua plataforma para criar, vender e gerenciar bots.
               </h1>
               <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
@@ -222,17 +222,17 @@ function LoginPage() {
                 ["Feito para crescer", "Criadores entram, configuram e gerenciam seus bots."],
               ].map(([title, description]) => (
                 <div
-                  className="rounded-[1.6rem] border bg-white/80 p-4 shadow-sm backdrop-blur"
+                  className="rounded-[1.6rem] border bg-card p-4 shadow-sm backdrop-blur"
                   key={title}
                 >
                   <CheckCircle2 className="mb-3 h-5 w-5 text-primary" />
-                  <h2 className="font-semibold text-[#202124]">{title}</h2>
+                  <h2 className="font-semibold text-foreground">{title}</h2>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
                 </div>
               ))}
             </div>
 
-            <div className="grid gap-3 rounded-[1.75rem] border bg-white/75 p-4 shadow-sm backdrop-blur sm:grid-cols-3">
+            <div className="grid gap-3 rounded-[1.75rem] border bg-card p-4 shadow-sm backdrop-blur sm:grid-cols-3">
               {[
                 ["Admin", "Sua conta antiga continua dona da plataforma."],
                 ["Creator", "Novas contas criam apenas os proprios bots."],
@@ -249,8 +249,8 @@ function LoginPage() {
             </div>
           </div>
 
-          <Card className="mx-auto w-full max-w-[460px] overflow-hidden border bg-white/95 p-0 shadow-2xl shadow-primary/10 backdrop-blur">
-            <div className="bg-gradient-to-br from-primary via-[#2f7ee9] to-[#6ea8fe] p-6 text-primary-foreground">
+          <Card className="mx-auto w-full max-w-[460px] overflow-hidden border bg-card p-0 shadow-[0_24px_70px_rgba(17,17,17,0.08)] backdrop-blur">
+            <div className="bg-primary p-6 text-primary-foreground">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold opacity-90">
@@ -276,7 +276,9 @@ function LoginPage() {
                 <button
                   className={cn(
                     "rounded-xl px-4 py-2.5 text-sm font-semibold transition",
-                    !createAccount ? "bg-white text-primary shadow-sm" : "text-muted-foreground",
+                    !createAccount
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground",
                   )}
                   type="button"
                   onClick={openLogin}
@@ -286,7 +288,9 @@ function LoginPage() {
                 <button
                   className={cn(
                     "rounded-xl px-4 py-2.5 text-sm font-semibold transition",
-                    createAccount ? "bg-white text-primary shadow-sm" : "text-muted-foreground",
+                    createAccount
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground",
                   )}
                   type="button"
                   onClick={openSignup}
@@ -301,7 +305,7 @@ function LoginPage() {
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      className="h-12 rounded-2xl bg-white pl-11"
+                      className="h-12 rounded-2xl bg-background pl-11"
                       id="email"
                       name="email"
                       type="email"
@@ -316,7 +320,7 @@ function LoginPage() {
                   <Label htmlFor="password">Senha</Label>
                   <div className="relative">
                     <Input
-                      className="h-12 rounded-2xl bg-white pr-11"
+                      className="h-12 rounded-2xl bg-background pr-11"
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
@@ -368,7 +372,7 @@ function LoginPage() {
                       <div className="relative">
                         <Input
                           className={cn(
-                            "h-12 rounded-2xl bg-white pr-11",
+                            "h-12 rounded-2xl bg-background pr-11",
                             passwordMismatch ? "border-destructive" : "",
                           )}
                           id="password_confirmation"
@@ -398,7 +402,7 @@ function LoginPage() {
                         <p
                           className={cn(
                             "text-xs font-medium",
-                            passwordMismatch ? "text-destructive" : "text-[#188038]",
+                            passwordMismatch ? "text-destructive" : "text-primary",
                           )}
                         >
                           {passwordMismatch ? "As senhas nao coincidem." : "As senhas coincidem."}

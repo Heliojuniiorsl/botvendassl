@@ -31,7 +31,7 @@ function PerfilPage() {
         <p className="mt-2 text-muted-foreground">Dados basicos da sua conta no CriaBot.</p>
       </div>
 
-      <Card className="border bg-white/90 p-5 shadow-sm sm:p-6">
+      <Card className="border bg-card p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
@@ -71,7 +71,7 @@ function ProfileInfo({
   icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-2xl border bg-white p-4">
+    <div className="rounded-2xl border bg-background p-4">
       <Icon className="h-5 w-5 text-primary" />
       <p className="mt-3 text-xs font-semibold uppercase text-muted-foreground">{title}</p>
       <p className="mt-1 break-words font-semibold">{value}</p>

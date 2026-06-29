@@ -19,7 +19,7 @@ export function PanelSubnav<T extends string>({
   return (
     <div
       className={cn(
-        "flex max-w-full gap-2 overflow-x-auto overscroll-x-contain rounded-3xl border bg-white p-2 shadow-sm",
+        "flex max-w-full gap-2 overflow-x-auto overscroll-x-contain rounded-3xl border bg-card p-2 shadow-sm",
         className,
       )}
     >

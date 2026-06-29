@@ -31,7 +31,7 @@ function ConfigPage() {
         </p>
       </div>
 
-      <Card className="border bg-white/90 p-5 shadow-sm sm:p-6">
+      <Card className="border bg-card p-5 shadow-sm sm:p-6">
         <form className="max-w-2xl space-y-5" onSubmit={submit}>
           <div className="space-y-2">
             <Label htmlFor="platform_name">Nome da plataforma</Label>
