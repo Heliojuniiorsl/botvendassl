@@ -244,21 +244,21 @@ const botFatherTokenTutorial = [
 
 function BotFatherTokenTutorialAside() {
   return (
-    <aside className="rounded-3xl border bg-[#F5F5F3] p-5 shadow-sm lg:sticky lg:top-24 lg:self-start">
-      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-        <ShieldCheck className="h-4 w-4" />
+    <aside className="border-t pt-5 lg:sticky lg:top-24 lg:self-start lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+      <div className="flex items-center gap-2 text-base font-semibold text-foreground">
+        <ShieldCheck className="h-4 w-4 text-primary" />
         Como pegar o token
       </div>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         Siga estes passos no Telegram antes de colar o token no CriaBot.
       </p>
-      <ol className="mt-4 space-y-3">
+      <ol className="mt-5 space-y-0 divide-y">
         {botFatherTokenTutorial.map((item, index) => (
-          <li key={item} className="flex gap-3 rounded-2xl bg-white p-3 text-sm shadow-sm">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-              {index + 1}
+          <li key={item} className="flex gap-3 py-3 text-sm first:pt-0 last:pb-0">
+            <span className="w-6 shrink-0 font-semibold text-primary">
+              {String(index + 1).padStart(2, "0")}
             </span>
-            <span className="leading-relaxed text-foreground/85">{item}</span>
+            <span className="leading-relaxed text-muted-foreground">{item}</span>
           </li>
         ))}
       </ol>
