@@ -901,23 +901,23 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                     </div>
 
                     <div className="border-t pt-5">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                             <UserRound className="h-4 w-4" />
-                            Vincular usuario ao CriaBot
+                            Vincular Telegram ao CriaBot
                           </div>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            Abra o bot oficial, toque em /start e o site mostra aqui os dados do
-                            Telegram vinculados a esta conta.
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            Abra o bot oficial no Telegram e toque em <strong>Start</strong>. Depois
+                            volte para esta tela e clique em <strong>Atualizar</strong>.
                           </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 lg:min-w-[270px]">
                           {criaBotLinkStatus?.link_url && (
                             <Button asChild className="rounded-full px-4">
                               <a href={criaBotLinkStatus.link_url} target="_blank" rel="noreferrer">
                                 <ExternalLink className="mr-2 h-4 w-4" />
-                                Abrir bot oficial
+                                {linkedCriaBotUser ? "Vincular outra conta" : "Abrir no Telegram"}
                               </a>
                             </Button>
                           )}
@@ -952,31 +952,42 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       )}
 
                       {criaBotLinkStatus?.bot && (
-                        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-muted/40 p-3 text-sm">
-                          {criaBotLinkStatus.bot.photo_data_url ? (
-                            <img
-                              src={criaBotLinkStatus.bot.photo_data_url}
-                              alt={`Foto de ${criaBotLinkStatus.bot.display_name}`}
-                              className="h-12 w-12 rounded-2xl object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                              <Bot className="h-6 w-6" />
+                        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 text-sm">
+                          <div className="flex min-w-0 items-center gap-3">
+                            {criaBotLinkStatus.bot.photo_data_url ? (
+                              <img
+                                src={criaBotLinkStatus.bot.photo_data_url}
+                                alt={`Foto de ${criaBotLinkStatus.bot.display_name}`}
+                                className="h-12 w-12 rounded-2xl object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <Bot className="h-6 w-6" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold">
+                                {criaBotLinkStatus.bot.display_name}
+                              </p>
+                              <p className="truncate text-muted-foreground">
+                                @{criaBotLinkStatus.bot.username}
+                              </p>
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="truncate font-semibold">
-                              {criaBotLinkStatus.bot.display_name}
-                            </p>
-                            <p className="truncate text-muted-foreground">
-                              @{criaBotLinkStatus.bot.username}
-                            </p>
                           </div>
+                          <span
+                            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                              linkedCriaBotUser
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {linkedCriaBotUser ? "Vinculado" : "Aguardando /start"}
+                          </span>
                         </div>
                       )}
 
                       {linkedCriaBotUser ? (
-                        <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                           <div className="flex items-start gap-4">
                             {linkedCriaBotUser.photo_data_url ? (
                               <img
@@ -1018,10 +1029,30 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       ) : (
                         criaBotLinkStatus?.configured &&
                         !criaBotLinkStatus.error && (
-                          <p className="mt-3 text-sm text-muted-foreground">
-                            Depois que o usuario abrir o bot oficial e der /start, o preview aparece
-                            aqui automaticamente.
-                          </p>
+                          <div className="mt-4 rounded-2xl border bg-[#F5F5F3] p-4 text-sm">
+                            <p className="font-semibold">Como vincular sua conta</p>
+                            <ol className="mt-3 space-y-2 text-muted-foreground">
+                              <li>
+                                <strong className="text-foreground">01.</strong> Clique em{" "}
+                                <strong className="text-foreground">Abrir no Telegram</strong>.
+                              </li>
+                              <li>
+                                <strong className="text-foreground">02.</strong> Toque em{" "}
+                                <strong className="text-foreground">Start</strong> dentro do bot
+                                oficial.
+                              </li>
+                              <li>
+                                <strong className="text-foreground">03.</strong> Volte para esta
+                                pagina e clique em{" "}
+                                <strong className="text-foreground">Atualizar</strong>.
+                              </li>
+                              <li>
+                                <strong className="text-foreground">04.</strong> Quando seus dados
+                                aparecerem, clique em{" "}
+                                <strong className="text-foreground">Continuar</strong>.
+                              </li>
+                            </ol>
+                          </div>
                         )
                       )}
                     </div>
