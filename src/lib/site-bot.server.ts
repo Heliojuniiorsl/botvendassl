@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
-import { sqlite } from "@/lib/database.server";
+import { primarySqlite as sqlite } from "@/lib/database.server";
 import {
   getBotInfoWithToken,
   getBotPhotoDataUrlWithToken,
@@ -239,7 +239,7 @@ export async function getCriaBotLinkStatus(accountId: string) {
   } catch (error) {
     return {
       configured: true,
-      error: error instanceof Error ? error.message : "Nao foi possivel consultar o bot oficial.",
+      error: error instanceof Error ? error.message : "Não foi possível consultar o bot oficial.",
       bot: null,
       link_url: null,
       expires_at: null,

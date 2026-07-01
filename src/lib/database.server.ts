@@ -26,7 +26,7 @@ function configureDatabase(database: Database.Database) {
   return database;
 }
 
-const primarySqlite = configureDatabase(new Database(databasePath));
+export const primarySqlite = configureDatabase(new Database(databasePath));
 const cloneDatabases = new Map<string, Database.Database>();
 
 function activeSqlite() {
@@ -349,6 +349,11 @@ function addColumnIfMissing(
   definition: string,
   database: Database.Database = sqlite,
 ) {
+  const tableExists = database
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(table);
+  if (!tableExists) return false;
+
   const columns = database.prepare(`PRAGMA table_info(${assertIdentifier(table)})`).all() as Row[];
   if (!columns.some((item) => item.name === column)) {
     database.exec(
