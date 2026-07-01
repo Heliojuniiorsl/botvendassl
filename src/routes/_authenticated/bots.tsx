@@ -117,6 +117,14 @@ type CriaBotLinkStatus = {
   link_url: string | null;
   expires_at: string | null;
   linked_user: CriaBotLinkedUser | null;
+  vip_chat: {
+    chat_id: number;
+    title: string | null;
+    username: string | null;
+    type: TelegramChatType;
+    message_id: number | null;
+    detected_at: string | null;
+  } | null;
 };
 
 type PlanAccessType = "days" | "lifetime";
@@ -385,8 +393,8 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   const criaBotLinkQuery = useQuery({
     queryKey: ["criabot-link-status"],
     queryFn: () => criaBotLinkStatusFn() as Promise<CriaBotLinkStatus>,
-    enabled: isCreateMode && step === 1,
-    refetchInterval: isCreateMode && step === 1 ? 4_000 : false,
+    enabled: isCreateMode && (step === 1 || step === 2),
+    refetchInterval: isCreateMode && (step === 1 || step === 2) ? 4_000 : false,
     retry: 1,
   });
 
@@ -472,6 +480,10 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   const isAdmin = role === "admin";
   const criaBotLinkStatus = criaBotLinkQuery.data;
   const linkedCriaBotUser = criaBotLinkStatus?.linked_user ?? null;
+  const detectedVipChat = criaBotLinkStatus?.vip_chat ?? null;
+  const detectedVipChatId = detectedVipChat?.chat_id ? String(detectedVipChat.chat_id) : "";
+  const detectedVipChatIsSelected =
+    Boolean(detectedVipChatId) && vipChatId.trim() === detectedVipChatId;
   const cleanToken = token.trim();
   const hasToken = cleanToken.length > 0;
   const tokenHasValidFormat = !hasToken || telegramBotTokenPattern.test(cleanToken);
@@ -522,6 +534,14 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
     setVipChatId(value);
     setVipVerification(null);
     setVipVerificationError(null);
+  }
+
+  function handleUseDetectedVipChat() {
+    if (!detectedVipChatId) return;
+    setVipChatId(detectedVipChatId);
+    setVipVerification(null);
+    setVipVerificationError(null);
+    toast.success("ID do VIP preenchido");
   }
 
   function handleVerifyVipChat() {
@@ -575,6 +595,10 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
       toast.error("Valide o token antes de continuar.");
       return;
     }
+    if (step === 1 && !linkedCriaBotUser) {
+      toast.error("Vincule seu Telegram ao CriaBot antes de continuar.");
+      return;
+    }
     if (step === 2 && (!vipChatIdIsValid || !vipVerificationIsCurrent)) {
       toast.error(
         !vipChatIdIsValid
@@ -599,6 +623,9 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
   function getStepBlockMessage(targetStep: WizardStepId) {
     if (targetStep >= 2 && !validatedTokenIsCurrent) {
       return "Valide o token do Telegram antes de continuar.";
+    }
+    if (targetStep >= 2 && !linkedCriaBotUser) {
+      return "Vincule seu Telegram ao CriaBot antes de continuar.";
     }
     if (targetStep >= 3 && (!vipChatIdIsValid || !vipVerificationIsCurrent)) {
       return "Verifique o grupo ou canal VIP antes de continuar.";
@@ -636,6 +663,15 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
 
     return () => clearTimeout(timeout);
   }, [cleanToken, isCreateMode, step, validatedTokenIsCurrent, validateToken]);
+
+  useEffect(() => {
+    if (!isCreateMode || !detectedVipChatId || vipChatId.trim()) {
+      return;
+    }
+    setVipChatId(detectedVipChatId);
+    setVipVerification(null);
+    setVipVerificationError(null);
+  }, [detectedVipChatId, isCreateMode, vipChatId]);
 
   return (
     <main
@@ -855,7 +891,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         {!tokenHasValidFormat && (
                           <p className="flex items-center gap-1 text-xs font-medium text-destructive">
                             <AlertCircle className="h-3.5 w-3.5" />
-                            Token em formato invalido.
+                            Token em formato inválido.
                           </p>
                         )}
                         {validationError && (
@@ -1070,67 +1106,136 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         após o pagamento.
                       </p>
                     </div>
-                    <MiniTutorial
-                      title="Como adicionar o VIP"
-                      items={[
-                        {
-                          title: "Adicione o bot",
-                          body: "Coloque o bot que você está criando dentro do grupo ou canal VIP.",
-                        },
-                        {
-                          title: "Promova como admin",
-                          body: "No Telegram, deixe o bot como administrador para ele conseguir gerar convite de acesso.",
-                        },
-                        {
-                          title: "Cole o ID",
-                          body: "Use o ID negativo do grupo/canal, normalmente comecando por -100, e clique em verificar.",
-                        },
-                      ]}
-                    />
+                    <div className="rounded-2xl border bg-[#F5F5F3] p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <MessageSquareText className="h-4 w-4" />
+                            Detectar ID pelo encaminhamento
+                          </div>
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            Encaminhe para o bot oficial uma mensagem do grupo ou canal VIP. Depois
+                            volte aqui e clique em <strong>Atualizar</strong>.
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 lg:min-w-[270px]">
+                          {criaBotLinkStatus?.link_url && (
+                            <Button asChild className="rounded-full px-4">
+                              <a href={criaBotLinkStatus.link_url} target="_blank" rel="noreferrer">
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                Abrir bot oficial
+                              </a>
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => void criaBotLinkQuery.refetch()}
+                            disabled={criaBotLinkQuery.isFetching}
+                          >
+                            {criaBotLinkQuery.isFetching ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCw className="mr-2 h-4 w-4" />
+                            )}
+                            Atualizar
+                          </Button>
+                        </div>
+                      </div>
+
+                      {detectedVipChat ? (
+                        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 font-semibold text-emerald-700">
+                                <CheckCircle2 className="h-4 w-4" />
+                                VIP detectado
+                              </div>
+                              <p className="mt-1 truncate font-display text-lg font-semibold">
+                                {detectedVipChat.title ||
+                                  (detectedVipChat.username
+                                    ? `@${detectedVipChat.username}`
+                                    : "Grupo/canal VIP")}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {formatTelegramChatType(detectedVipChat.type)} - ID{" "}
+                                {detectedVipChat.chat_id}
+                                {detectedVipChat.username
+                                  ? ` - @${detectedVipChat.username}`
+                                  : ""}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant={detectedVipChatIsSelected ? "outline" : "default"}
+                              className="rounded-full"
+                              onClick={handleUseDetectedVipChat}
+                              disabled={detectedVipChatIsSelected}
+                            >
+                              {detectedVipChatIsSelected ? (
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                              ) : (
+                                <ArrowRight className="mr-2 h-4 w-4" />
+                              )}
+                              {detectedVipChatIsSelected ? "ID preenchido" : "Usar esse ID"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-2xl border border-dashed bg-background p-4 text-sm text-muted-foreground">
+                          Aguardando mensagem encaminhada. Se o Telegram esconder a origem da
+                          mensagem, informe o ID manualmente abaixo.
+                        </div>
+                      )}
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="vip_chat_id">ID do grupo ou canal VIP</Label>
-                      <Input
-                        id="vip_chat_id"
-                        value={vipChatId}
-                        onChange={(event) => handleVipChatIdChange(event.target.value)}
-                        placeholder="-1001234567890"
-                        inputMode="numeric"
-                        required
-                        className={
-                          vipChatId && !vipChatIdIsValid ? "border-destructive" : undefined
-                        }
-                      />
+                      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto]">
+                        <Input
+                          id="vip_chat_id"
+                          value={vipChatId}
+                          onChange={(event) => handleVipChatIdChange(event.target.value)}
+                          placeholder="-1001234567890"
+                          inputMode="numeric"
+                          required
+                          className={
+                            vipChatId && !vipChatIdIsValid ? "border-destructive" : undefined
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleVerifyVipChat}
+                          disabled={
+                            !validatedTokenIsCurrent ||
+                            !vipChatIdIsValid ||
+                            verifyVipChat.isPending ||
+                            vipVerificationIsCurrent
+                          }
+                        >
+                          {verifyVipChat.isPending ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : vipVerificationIsCurrent ? (
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                          ) : (
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                          )}
+                          {vipVerificationIsCurrent ? "VIP verificado" : "Verificar VIP"}
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        Use o ID negativo do Telegram. Canais e supergrupos normalmente comecam com
-                        -100.
+                        Depois de preencher o ID, adicione o bot que você está criando ao VIP e
+                        promova como administrador.
                       </p>
                       {vipChatId && !vipChatIdIsValid && (
                         <p className="flex items-center gap-1 text-xs font-medium text-destructive">
                           <AlertCircle className="h-3.5 w-3.5" />
-                          Informe um ID negativo valido.
+                          Informe um ID negativo válido.
                         </p>
                       )}
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleVerifyVipChat}
-                      disabled={
-                        !validatedTokenIsCurrent ||
-                        !vipChatIdIsValid ||
-                        verifyVipChat.isPending ||
-                        vipVerificationIsCurrent
-                      }
-                    >
-                      {verifyVipChat.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : vipVerificationIsCurrent ? (
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                      ) : (
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                      )}
-                      {vipVerificationIsCurrent ? "VIP verificado" : "Verificar grupo/canal VIP"}
-                    </Button>
                     {vipPreviewIsCurrent && vipVerification && (
                       <div
                         className={`rounded-2xl border p-4 text-sm ${
@@ -1242,7 +1347,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                           body: "Defina o nome do plano e, se quiser, um texto personalizado para o botão do Telegram.",
                         },
                         {
-                          title: "Preco e validade",
+                          title: "Preço e validade",
                           body: "Escolha o valor e se o acesso será por dias ou vitalício. O Pix será gerado nesse plano.",
                         },
                       ]}
@@ -1292,7 +1397,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                     </div>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
-                        <Label htmlFor="plan_price">Preco (R$)</Label>
+                        <Label htmlFor="plan_price">Preço (R$)</Label>
                         <Input
                           id="plan_price"
                           value={planPrice}
@@ -1347,7 +1452,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         },
                         {
                           title: "VIP pronto",
-                          body: "Verifique se o bot esta como administrador no grupo ou canal que vai entregar acesso.",
+                          body: "Verifique se o bot está como administrador no grupo ou canal que vai entregar acesso.",
                         },
                         {
                           title: "Criar bot",
@@ -1376,7 +1481,7 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                         </p>
                         <p className="mt-1 font-semibold">{planName || "Não informado"}</p>
                         <p className="text-muted-foreground">
-                          {planPriceIsValid ? formatCurrency(planPriceNumber) : "Preco invalido"} ·{" "}
+                          {planPriceIsValid ? formatCurrency(planPriceNumber) : "Preço inválido"} ·{" "}
                           {planAccessType === "lifetime"
                             ? "Vitalício"
                             : `${planDurationDays || "0"} dias`}

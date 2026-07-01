@@ -29,8 +29,21 @@ type LinkedUserRow = {
   is_premium: number;
   photo_data_url: string | null;
   raw_profile_json: string | null;
+  vip_chat_id: number | null;
+  vip_chat_title: string | null;
+  vip_chat_username: string | null;
+  vip_chat_type: string | null;
+  vip_chat_message_id: number | null;
+  vip_chat_detected_at: string | null;
   linked_at: string;
   updated_at: string;
+};
+
+type ForwardedVipChat = {
+  id: number;
+  title?: string | null;
+  username?: string | null;
+  type?: string | null;
 };
 
 type LinkTokenRow = {
@@ -86,6 +99,18 @@ function mapLinkedUser(row: LinkedUserRow | undefined | null) {
   };
 }
 
+function mapForwardedVipChat(row: LinkedUserRow | undefined | null) {
+  if (!row?.vip_chat_id) return null;
+  return {
+    chat_id: row.vip_chat_id,
+    title: row.vip_chat_title,
+    username: row.vip_chat_username,
+    type: row.vip_chat_type,
+    message_id: row.vip_chat_message_id,
+    detected_at: row.vip_chat_detected_at,
+  };
+}
+
 export function getCriaBotToken() {
   return (
     process.env.CRIABOT_TOKEN?.trim() ||
@@ -116,6 +141,13 @@ export function getLinkedCriaBotUser(accountId: string) {
     .prepare("SELECT * FROM site_bot_user_links WHERE account_id = ?")
     .get(accountId) as LinkedUserRow | undefined;
   return mapLinkedUser(row);
+}
+
+export function getForwardedCriaBotVipChat(accountId: string) {
+  const row = sqlite
+    .prepare("SELECT * FROM site_bot_user_links WHERE account_id = ?")
+    .get(accountId) as LinkedUserRow | undefined;
+  return mapForwardedVipChat(row);
 }
 
 function ensureFreshLinkToken(accountId: string) {
@@ -178,15 +210,17 @@ async function getSiteBotInfo(token: string) {
 export async function getCriaBotLinkStatus(accountId: string) {
   const token = getCriaBotToken();
   const linkedUser = getLinkedCriaBotUser(accountId);
+  const vipChat = getForwardedCriaBotVipChat(accountId);
 
   if (!token) {
     return {
       configured: false,
-      error: "Configure CRIABOT_TOKEN nas variaveis de ambiente.",
+      error: "Configure CRIABOT_TOKEN nas variáveis de ambiente.",
       bot: null,
       link_url: null,
       expires_at: null,
       linked_user: linkedUser,
+      vip_chat: vipChat,
     };
   }
 
@@ -200,6 +234,7 @@ export async function getCriaBotLinkStatus(accountId: string) {
       link_url: `https://t.me/${bot.username}?start=${linkToken.code}`,
       expires_at: linkToken.expires_at,
       linked_user: linkedUser,
+      vip_chat: vipChat,
     };
   } catch (error) {
     return {
@@ -209,6 +244,7 @@ export async function getCriaBotLinkStatus(accountId: string) {
       link_url: null,
       expires_at: null,
       linked_user: linkedUser,
+      vip_chat: vipChat,
     };
   }
 }
@@ -284,8 +320,59 @@ export async function linkCriaBotUserByCode(input: {
   };
 }
 
+export function saveCriaBotForwardedVipChat(input: {
+  telegramUserId: number;
+  telegramChatId: number;
+  chat: ForwardedVipChat;
+  messageId?: number | null;
+}) {
+  const chatId = Number(input.chat.id);
+  if (!Number.isFinite(chatId)) {
+    return { ok: false as const, reason: "invalid_chat" as const, updated: 0 };
+  }
+
+  const now = nowIso();
+  const result = sqlite
+    .prepare(
+      `UPDATE site_bot_user_links
+       SET vip_chat_id = ?,
+           vip_chat_title = ?,
+           vip_chat_username = ?,
+           vip_chat_type = ?,
+           vip_chat_message_id = ?,
+           vip_chat_detected_at = ?,
+           updated_at = ?
+       WHERE telegram_user_id = ? AND telegram_chat_id = ?`,
+    )
+    .run(
+      chatId,
+      input.chat.title || input.chat.username || null,
+      normalizeUsername(input.chat.username) || null,
+      input.chat.type || null,
+      input.messageId ?? null,
+      now,
+      now,
+      input.telegramUserId,
+      input.telegramChatId,
+    );
+
+  return {
+    ok: result.changes > 0,
+    reason: result.changes > 0 ? null : ("not_linked" as const),
+    updated: result.changes,
+    vip_chat: {
+      chat_id: chatId,
+      title: input.chat.title || input.chat.username || null,
+      username: normalizeUsername(input.chat.username) || null,
+      type: input.chat.type || null,
+      message_id: input.messageId ?? null,
+      detected_at: now,
+    },
+  };
+}
+
 export async function sendCriaBotMessage(chatId: number | string, text: string) {
   const token = getCriaBotToken();
-  if (!token) throw new Error("CRIABOT_TOKEN nao configurado");
+  if (!token) throw new Error("CRIABOT_TOKEN não configurado");
   return sendMessageWithToken(token, chatId, text);
 }

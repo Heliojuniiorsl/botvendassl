@@ -97,6 +97,12 @@ sqlite.exec(`
     is_premium INTEGER NOT NULL DEFAULT 0,
     photo_data_url TEXT,
     raw_profile_json TEXT,
+    vip_chat_id INTEGER,
+    vip_chat_title TEXT,
+    vip_chat_username TEXT,
+    vip_chat_type TEXT,
+    vip_chat_message_id INTEGER,
+    vip_chat_detected_at TEXT,
     linked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -408,6 +414,12 @@ function ensureTelegramGroupsSupportsChannels(database: Database.Database = sqli
 function ensureSalesDatabaseMigrations(database: Database.Database = sqlite) {
   ensureTelegramGroupsSupportsChannels(database);
   ensureAdminAccountRoles(database);
+  addColumnIfMissing("site_bot_user_links", "vip_chat_id", "INTEGER", database);
+  addColumnIfMissing("site_bot_user_links", "vip_chat_title", "TEXT", database);
+  addColumnIfMissing("site_bot_user_links", "vip_chat_username", "TEXT", database);
+  addColumnIfMissing("site_bot_user_links", "vip_chat_type", "TEXT", database);
+  addColumnIfMissing("site_bot_user_links", "vip_chat_message_id", "INTEGER", database);
+  addColumnIfMissing("site_bot_user_links", "vip_chat_detected_at", "TEXT", database);
   addColumnIfMissing("users", "email", "TEXT", database);
   addColumnIfMissing("users", "is_blocked", "INTEGER NOT NULL DEFAULT 0", database);
   addColumnIfMissing("users", "notes", "TEXT", database);
@@ -466,6 +478,12 @@ function ensureSalesDatabaseMigrations(database: Database.Database = sqlite) {
 ensureTelegramGroupsSupportsChannels();
 
 ensureAdminAccountRoles();
+addColumnIfMissing("site_bot_user_links", "vip_chat_id", "INTEGER");
+addColumnIfMissing("site_bot_user_links", "vip_chat_title", "TEXT");
+addColumnIfMissing("site_bot_user_links", "vip_chat_username", "TEXT");
+addColumnIfMissing("site_bot_user_links", "vip_chat_type", "TEXT");
+addColumnIfMissing("site_bot_user_links", "vip_chat_message_id", "INTEGER");
+addColumnIfMissing("site_bot_user_links", "vip_chat_detected_at", "TEXT");
 addColumnIfMissing("users", "email", "TEXT");
 addColumnIfMissing("users", "is_blocked", "INTEGER NOT NULL DEFAULT 0");
 addColumnIfMissing("users", "notes", "TEXT");

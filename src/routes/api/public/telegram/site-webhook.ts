@@ -6,6 +6,7 @@ import {
   getCriaBotWebhookSecret,
   isDuplicateCriaBotUpdate,
   linkCriaBotUserByCode,
+  saveCriaBotForwardedVipChat,
   sendCriaBotMessage,
 } from "@/lib/site-bot.server";
 
@@ -19,12 +20,57 @@ function escapeHtml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+type ForwardedChat = {
+  id?: number;
+  title?: string;
+  username?: string;
+  type?: string;
+};
+
+function formatChatType(type: string | undefined) {
+  if (type === "channel") return "Canal";
+  if (type === "supergroup") return "Supergrupo";
+  if (type === "group") return "Grupo";
+  return "Grupo/canal";
+}
+
+function getForwardedChat(message: any): { chat: ForwardedChat; messageId: number | null } | null {
+  const origin = message?.forward_origin;
+
+  if (origin?.type === "channel" && origin.chat?.id) {
+    return {
+      chat: origin.chat,
+      messageId: Number.isFinite(Number(origin.message_id)) ? Number(origin.message_id) : null,
+    };
+  }
+
+  if (origin?.type === "chat" && origin.sender_chat?.id) {
+    return {
+      chat: origin.sender_chat,
+      messageId: Number.isFinite(Number(message?.forward_from_message_id))
+        ? Number(message.forward_from_message_id)
+        : null,
+    };
+  }
+
+  if (message?.forward_from_chat?.id) {
+    return {
+      chat: message.forward_from_chat,
+      messageId: Number.isFinite(Number(message.forward_from_message_id))
+        ? Number(message.forward_from_message_id)
+        : null,
+    };
+  }
+
+  return null;
+}
+
 export const Route = createFileRoute("/api/public/telegram/site-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const token = getCriaBotToken();
-        if (!token) return new Response("CRIABOT_TOKEN nao configurado", { status: 503 });
+        if (!token) return new Response("CRIABOT_TOKEN não configurado", { status: 503 });
 
         const incomingSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
         const expectedSecret = getCriaBotWebhookSecret(token);
@@ -52,37 +98,78 @@ export const Route = createFileRoute("/api/public/telegram/site-webhook")({
         }
 
         const startMatch = text.match(/^\/start(?:@\w+)?(?:\s+(.+))?$/i);
-        const code = startMatch?.[1]?.trim().split(/\s+/)[0] ?? "";
+        if (startMatch) {
+          const code = startMatch?.[1]?.trim().split(/\s+/)[0] ?? "";
+          if (!code) {
+            await sendCriaBotMessage(
+              chatId,
+              "Abra este bot pelo botão dentro do painel CriaBot para vincular sua conta.",
+            );
+            return Response.json({ ok: true, linked: false });
+          }
 
-        if (!code) {
+          const result = await linkCriaBotUserByCode({ code, chatId, user });
+          if (!result.ok) {
+            await sendCriaBotMessage(
+              chatId,
+              "Esse link expirou ou já foi usado. Volte ao painel CriaBot e abra o bot oficial novamente.",
+            );
+            return Response.json({ ok: true, linked: false, reason: result.reason });
+          }
+
+          const linked = result.linked_user;
+          const name =
+            [linked?.first_name, linked?.last_name].filter(Boolean).join(" ").trim() ||
+            linked?.username ||
+            `ID ${linked?.telegram_user_id}`;
+
           await sendCriaBotMessage(
             chatId,
-            "Abra este bot pelo botao dentro do painel CriaBot para vincular sua conta.",
+            `Conta vinculada com sucesso.\n\nUsuário: <b>${escapeHtml(name)}</b>\nID Telegram: <code>${linked?.telegram_user_id}</code>\n\nAgora volte ao Site CriaBot. Para continuar a criação do bot.`,
           );
-          return Response.json({ ok: true, linked: false });
+
+          return Response.json({ ok: true, linked: true });
         }
 
-        const result = await linkCriaBotUserByCode({ code, chatId, user });
-        if (!result.ok) {
+        const forwardedChat = getForwardedChat(message);
+        if (!forwardedChat?.chat?.id) {
           await sendCriaBotMessage(
             chatId,
-            "Esse link expirou ou ja foi usado. Volte ao painel CriaBot e abra o bot oficial novamente.",
+            "Para detectar o grupo/canal VIP automaticamente, encaminhe para mim uma mensagem do VIP. Depois volte ao site e clique em Atualizar.",
           );
-          return Response.json({ ok: true, linked: false, reason: result.reason });
+          return Response.json({ ok: true, vip_chat_detected: false });
         }
 
-        const linked = result.linked_user;
-        const name =
-          [linked?.first_name, linked?.last_name].filter(Boolean).join(" ").trim() ||
-          linked?.username ||
-          `ID ${linked?.telegram_user_id}`;
+        const saved = saveCriaBotForwardedVipChat({
+          telegramUserId: Number(user.id),
+          telegramChatId: chatId,
+          chat: {
+            id: Number(forwardedChat.chat.id),
+            title: forwardedChat.chat.title,
+            username: forwardedChat.chat.username,
+            type: forwardedChat.chat.type,
+          },
+          messageId: forwardedChat.messageId,
+        });
+
+        if (!saved.ok) {
+          await sendCriaBotMessage(
+            chatId,
+            "Antes de detectar o VIP, vincule sua conta pelo botão dentro do painel CriaBot. Depois encaminhe a mensagem novamente.",
+          );
+          return Response.json({ ok: true, vip_chat_detected: false, reason: saved.reason });
+        }
+
+        const title =
+          saved.vip_chat.title ||
+          (saved.vip_chat.username ? `@${saved.vip_chat.username}` : String(saved.vip_chat.chat_id));
 
         await sendCriaBotMessage(
           chatId,
-          `Conta vinculada com sucesso.\n\nUsuario: <b>${escapeHtml(name)}</b>\nID Telegram: <code>${linked?.telegram_user_id}</code>\n\nAgora volte ao Site CriaBot. Para continuar a criação do bot.`,
+          `VIP detectado com sucesso.\n\n${formatChatType(saved.vip_chat.type || undefined)}: <b>${escapeHtml(title)}</b>\nID: <code>${saved.vip_chat.chat_id}</code>\n\nAgora volte ao Site CriaBot e clique em Atualizar para usar esse ID.`,
         );
 
-        return Response.json({ ok: true, linked: true });
+        return Response.json({ ok: true, vip_chat_detected: true });
       },
     },
   },
