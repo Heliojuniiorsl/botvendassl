@@ -233,13 +233,9 @@ const botFatherTokenTutorial = [
   "Toque em Create a New Bot.",
   "Coloque a foto do bot tocando no icone da camera.",
   "Digite o nome do bot.",
-  "Em About, voce pode colocar uma descricao curta ou deixar vazio.",
-  "Escolha o username do bot.",
-  "O username precisa terminar com bot.",
-  "Se aparecer que o username ja esta em uso, escolha outro nome ate aceitar.",
+  "Escolha um username que termine com bot.",
   "Quando o bot for criado, o BotFather vai mostrar o token da API.",
   "Toque em Copy para copiar o token.",
-  "Cole esse token no seu painel ou sistema onde pede o Token do Bot.",
 ];
 
 const botFatherUrl = "https://t.me/BotFather";
@@ -275,7 +271,7 @@ function BotFatherTokenTutorialAside() {
         <Button asChild variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs">
           <a href={botFatherUrl} target="_blank" rel="noreferrer">
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-            Abrir
+            Abrir BotFather
           </a>
         </Button>
       </div>
@@ -818,33 +814,45 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                       </h3>
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                          <Bot className="h-4 w-4" />
-                          Token do bot que sera criado
-                        </div>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Cole aqui o token recebido no BotFather. O CriaBot valida e mostra a
-                          previa do bot automaticamente.
-                        </p>
-                      </div>
+                    <div className="space-y-3">
                       <div className="space-y-2">
                         <Label htmlFor="telegram_token">Token do bot</Label>
-                        <Input
-                          id="telegram_token"
-                          value={token}
-                          onChange={(event) => handleTokenChange(event.target.value)}
-                          placeholder="1234567890:ABC..."
-                          type="password"
-                          autoComplete="off"
-                          required
-                          className={
-                            !tokenHasValidFormat || validationError
-                              ? "border-destructive"
-                              : undefined
-                          }
-                        />
+                        <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
+                          <Input
+                            id="telegram_token"
+                            value={token}
+                            onChange={(event) => handleTokenChange(event.target.value)}
+                            placeholder="1234567890:ABC..."
+                            type="password"
+                            autoComplete="off"
+                            required
+                            className={
+                              !tokenHasValidFormat || validationError
+                                ? "border-destructive"
+                                : undefined
+                            }
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleValidateToken}
+                            disabled={!hasToken || !tokenHasValidFormat || validateToken.isPending}
+                            className="rounded-full lg:h-11"
+                          >
+                            {validateToken.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                            )}
+                            {validateToken.isPending ? "Validando..." : "Validar token"}
+                          </Button>
+                          <Button asChild variant="outline" className="rounded-full lg:h-11">
+                            <a href={botFatherUrl} target="_blank" rel="noreferrer">
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Abrir BotFather
+                            </a>
+                          </Button>
+                        </div>
                         {!tokenHasValidFormat && (
                           <p className="flex items-center gap-1 text-xs font-medium text-destructive">
                             <AlertCircle className="h-3.5 w-3.5" />
@@ -891,27 +899,6 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                           </div>
                         </div>
                       )}
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleValidateToken}
-                          disabled={!hasToken || !tokenHasValidFormat || validateToken.isPending}
-                        >
-                          {validateToken.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                          )}
-                          {validateToken.isPending ? "Validando..." : "Validar token"}
-                        </Button>
-                        <Button asChild variant="outline">
-                          <a href={botFatherUrl} target="_blank" rel="noreferrer">
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            Abrir BotFather
-                          </a>
-                        </Button>
-                      </div>
                     </div>
 
                     <div className="border-t pt-5">
@@ -926,9 +913,9 @@ export function BotsPanelContent({ embedded = false, mode = "list" }: BotsPanelC
                             Telegram vinculados a esta conta.
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           {criaBotLinkStatus?.link_url && (
-                            <Button asChild className="rounded-full">
+                            <Button asChild className="rounded-full px-4">
                               <a href={criaBotLinkStatus.link_url} target="_blank" rel="noreferrer">
                                 <ExternalLink className="mr-2 h-4 w-4" />
                                 Abrir bot oficial
